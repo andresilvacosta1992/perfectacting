@@ -1,4 +1,5 @@
-/opt/lampp/bin/mysqldump -u root -p 23_05_perfectacting > db_perfectacting_7tR04.sql
+mysqldump -u "root" "23_05_perfectacting" > "db.sql"
 git add .
-git commit -m "update"
+read -p "comentário:" comentario
+git commit -m "$comentario"
 git push origin
