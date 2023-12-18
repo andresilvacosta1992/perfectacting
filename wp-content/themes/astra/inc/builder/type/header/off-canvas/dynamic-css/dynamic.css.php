@@ -157,10 +157,6 @@ function astra_off_canvas_static_css() {
 		box-shadow: none;
 	}
 
-	.ast-mobile-popup-drawer .ast-mobile-popup-header .menu-toggle-close:focus {
-		outline: thin dotted;
-	}
-
 	.ast-mobile-popup-drawer.ast-mobile-popup-full-width .ast-mobile-popup-inner {
 		max-width: none;
 		transition: transform 0s ease-in, opacity 0.2s ease-in;
@@ -252,7 +248,7 @@ function astra_off_canvas_static_css() {
 		}
 		.ast-mobile-popup-drawer .ast-mobile-popup-inner {
 			width: 100%;
-			transform: translateX(100%);
+			transform: translateX(-115%);
 			max-width: 90%;
 			left: 0;
 			top: 0;
@@ -270,7 +266,7 @@ function astra_off_canvas_static_css() {
 			overflow-x:hidden;
 		}
 		.ast-mobile-popup-drawer.ast-mobile-popup-left .ast-mobile-popup-inner {
-			transform: translateX(-100%);
+			transform: translateX(-115%);
 			left: auto;
 			right: 0;
 		}
