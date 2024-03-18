@@ -1,5 +1,9 @@
 <?php
 
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 /**
  * Dropdown field.
  *
@@ -41,6 +45,7 @@ class WPForms_Field_Select extends WPForms_Field {
 
 		// Define field type information.
 		$this->name     = esc_html__( 'Dropdown', 'wpforms-lite' );
+		$this->keywords = esc_html__( 'choice', 'wpforms-lite' );
 		$this->type     = 'select';
 		$this->icon     = 'fa-caret-square-o-down';
 		$this->order    = 70;
@@ -378,7 +383,7 @@ class WPForms_Field_Select extends WPForms_Field {
 	}
 
 	/**
-	 * Field display on the form front-end.
+	 * Field display on the form front-end and admin entry edit page.
 	 *
 	 * @since 1.0.0
 	 * @since 1.5.0 Converted to a new format, where all the data are taken not from $deprecated, but field properties.
@@ -393,10 +398,18 @@ class WPForms_Field_Select extends WPForms_Field {
 		$container         = $field['properties']['input_container'];
 		$field_placeholder = ! empty( $field['placeholder'] ) ? $field['placeholder'] : '';
 		$is_multiple       = ! empty( $field['multiple'] );
-		$is_modern         = ! empty( $field['style'] ) && self::STYLE_MODERN === $field['style'];
+		$is_modern         = ! empty( $field['style'] ) && $field['style'] === self::STYLE_MODERN;
 		$choices           = $field['properties']['inputs'];
 
-		if ( ! $choices ) {
+		// Do not display the field with empty choices on the frontend.
+		if ( ! $choices && ! is_admin() ) {
+			return;
+		}
+
+		// Display a warning message on Entry Edit page.
+		if ( ! $choices && is_admin() ) {
+			$this->display_empty_dynamic_choices_message( $field );
+
 			return;
 		}
 
@@ -432,6 +445,7 @@ class WPForms_Field_Select extends WPForms_Field {
 		foreach ( $choices as $choice ) {
 			if ( ! empty( $choice['default'] ) ) {
 				$has_default = true;
+
 				break;
 			}
 		}
@@ -459,15 +473,39 @@ class WPForms_Field_Select extends WPForms_Field {
 
 		// Build the select options.
 		foreach ( $choices as $key => $choice ) {
+			$label = $this->get_choices_label( $choice['label']['text'] ?? '', $key );
+			$value = ! empty( $choice['attr']['value'] ) ? $choice['attr']['value'] : $label;
+
 			printf(
 				'<option value="%s" %s>%s</option>',
-				esc_attr( $choice['attr']['value'] ),
+				esc_attr( $value ),
 				selected( true, ! empty( $choice['default'] ), false ),
-				esc_html( $choice['label']['text'] )
+				esc_html( $label )
 			);
 		}
 
 		echo '</select>';
+	}
+
+	/**
+	 * Validate field.
+	 *
+	 * @since 1.8.2
+	 *
+	 * @param int          $field_id     Field ID.
+	 * @param string|array $field_submit Submitted field value (selected option).
+	 * @param array        $form_data    Form data and settings.
+	 */
+	public function validate( $field_id, $field_submit, $form_data ) {
+
+		$field = $form_data['fields'][ $field_id ];
+
+		// Skip validation if field is dynamic and choices are empty.
+		if ( $this->is_dynamic_choices_empty( $field, $form_data ) ) {
+			return;
+		}
+
+		parent::validate( $field_id, $field_submit, $form_data );
 	}
 
 	/**
@@ -574,7 +612,7 @@ class WPForms_Field_Select extends WPForms_Field {
 		}
 
 		// Push field details to be saved.
-		wpforms()->process->fields[ $field_id ] = $data;
+		wpforms()->get( 'process' )->fields[ $field_id ] = $data;
 	}
 
 	/**
@@ -596,7 +634,7 @@ class WPForms_Field_Select extends WPForms_Field {
 			}
 		}
 
-		if ( $has_modern_select || wpforms()->frontend->assets_global() ) {
+		if ( $has_modern_select || wpforms()->get( 'frontend' )->assets_global() ) {
 			$min = wpforms_get_min_suffix();
 
 			wp_enqueue_style(
@@ -627,7 +665,7 @@ class WPForms_Field_Select extends WPForms_Field {
 			}
 		}
 
-		if ( $has_modern_select || wpforms()->frontend->assets_global() ) {
+		if ( $has_modern_select || wpforms()->get( 'frontend' )->assets_global() ) {
 			$this->enqueue_choicesjs_once( $forms );
 		}
 	}

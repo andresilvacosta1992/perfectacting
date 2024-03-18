@@ -3,12 +3,21 @@
  * Frontend CSS.
  *
  * @since 2.4.0
+ * @var mixed[] $attr
  *
  * @package uagb
  */
 
-$icon_width       = UAGB_Helper::get_css_value( $attr['iconSize'], $attr['iconSizeUnit'] );
-$transformation   = UAGB_Helper::get_css_value( $attr['rotation'], $attr['rotationUnit'] );
+$icon_width = UAGB_Helper::get_css_value(
+	$attr['iconSize'],
+	is_string( $attr['iconSizeUnit'] ) ? $attr['iconSizeUnit'] : ''
+);
+
+$transformation = UAGB_Helper::get_css_value(
+	$attr['rotation'],
+	is_string( $attr['rotationUnit'] ) ? $attr['rotationUnit'] : ''
+);
+
 $background       = 'classic' === $attr['iconBackgroundColorType'] ? $attr['iconBackgroundColor'] : $attr['iconBackgroundGradientColor'];
 $hover_background = 'classic' === $attr['iconHoverBackgroundColorType'] ? $attr['iconHoverBackgroundColor'] : $attr['iconHoverBackgroundGradientColor'];
 
@@ -28,7 +37,19 @@ $box_shadow_properties = array(
 	'color'      => $attr['iconBoxShadowColor'],
 	'position'   => $attr['iconBoxShadowPosition'],
 );
-$box_shadow            = UAGB_Block_Helper::generate_shadow_css( $box_shadow_properties );
+
+$box_shadow_hover_properties = array(
+	'horizontal' => $attr['iconBoxShadowHOffsetHover'],
+	'vertical'   => $attr['iconBoxShadowVOffsetHover'],
+	'blur'       => $attr['iconBoxShadowBlurHover'],
+	'spread'     => $attr['iconBoxShadowSpreadHover'],
+	'color'      => $attr['iconBoxShadowColorHover'],
+	'position'   => $attr['iconBoxShadowPositionHover'],
+	'alt_color'  => $attr['iconBoxShadowColor'],
+);
+
+$box_shadow           = UAGB_Block_Helper::generate_shadow_css( $box_shadow_properties );
+$box_shadow_hover_css = UAGB_Block_Helper::generate_shadow_css( $box_shadow_hover_properties );
 
 $t_selectors = array();
 $m_selectors = array();
@@ -75,6 +96,16 @@ $selectors['.uagb-icon-wrapper .uagb-svg-wrapper:hover']     = array(
 	'border-color' => $attr['iconBorderHColor'],
 	'background'   => $hover_background,
 );
+
+// If using separate box shadow hover settings, then generate CSS for it.
+if ( $attr['useSeparateBoxShadows'] ) {
+	$selectors['.uagb-icon-wrapper .uagb-svg-wrapper:hover'] = array(
+		'box-shadow'   => $box_shadow_hover_css,
+		'border-color' => $attr['iconBorderHColor'],
+		'background'   => $hover_background,
+	);
+
+};
 
 // Generates css for tablet devices.
 $t_icon_width                                        = UAGB_Helper::get_css_value( $attr['iconSizeTablet'], $attr['iconSizeUnit'] );
@@ -130,4 +161,8 @@ $combined_selectors = array(
 	'mobile'  => $m_selectors,
 );
 
-return UAGB_Helper::generate_all_css( $combined_selectors, ' .uagb-block-' . $id );
+return UAGB_Helper::generate_all_css(
+	$combined_selectors,
+	' .uagb-block-' . $id,
+	isset( $gbs_class ) ? $gbs_class : ''
+);

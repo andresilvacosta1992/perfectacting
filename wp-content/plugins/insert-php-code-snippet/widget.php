@@ -94,7 +94,8 @@ class Xyz_Insert_Php_Widget extends WP_Widget {
     <label for="<?php echo $this->get_field_id('message'); ?>"><?php _e('Choose Snippet :'); ?></label>
     <select name="<?php echo $this->get_field_name('message'); ?>">
         <?php
-        if( count($entries)>0 ) {
+          if(!empty($entries))//if( count($entries)>0 )
+          {
             $count=1;
             $class = '';
             foreach( $entries as $entry ) {

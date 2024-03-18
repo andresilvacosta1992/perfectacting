@@ -106,7 +106,16 @@
 
 
 			$this->cacheFilePath = $this->cacheFilePath ? rtrim($this->cacheFilePath, "/")."/" : "";
+
+			/*
+				/public_html/wp-content/cache/all/sample-page
+			*/
 			$this->cacheFilePath = preg_replace("/\/cache\/(all|wpfc-mobile-cache)\/\//", "/cache/$1/", $this->cacheFilePath);
+
+			/*
+				/public_html/wp-content/cache/all/DOMAIN.COM/sample-page
+			*/
+			$this->cacheFilePath = preg_replace("/\/cache\/([^\/]+)\/(all|wpfc-mobile-cache)\/\//", "/cache/$1/$2/", $this->cacheFilePath);
 
 
 			if(strlen($_SERVER["REQUEST_URI"]) > 1){ // for the sub-pages
@@ -473,7 +482,9 @@
 				}
 			}
 
-			if(isset($username) && $username){			
+			if(isset($username) && $username){
+				$username = esc_sql($username);
+
 				$res = $wpdb->get_var("SELECT `$wpdb->users`.`ID`, `$wpdb->users`.`user_login`, `$wpdb->usermeta`.`meta_key`, `$wpdb->usermeta`.`meta_value` 
 									   FROM `$wpdb->users` 
 									   INNER JOIN `$wpdb->usermeta` 
@@ -798,7 +809,12 @@
 			}else if(isset($_GET["preview"])){
 				return $buffer."<!-- not cached -->";
 			}else if($this->checkHtml($buffer)){
-				return $buffer."<!-- html is corrupted -->";
+				if(preg_match("/^.*$/s", $buffer)){
+					// Check if the buffer has only one line (no line breaks)
+					return $buffer;
+				}else{
+					return $buffer."<!-- html is corrupted -->";
+				}
 			}else if((function_exists("http_response_code")) && (http_response_code() == 301 || http_response_code() == 302)){
 				return $buffer;
 			}else if(!$this->cacheFilePath){
@@ -806,7 +822,7 @@
 			}else{
 				$content = $buffer;
 
-				if(defined('WPFC_ENABLE_DELAY_JS') && WPFC_ENABLE_DELAY_JS){
+				if(isset($this->options->wpFastestCacheDelayJS) && method_exists("WpFastestCachePowerfulHtml", "render_blocking")){
 					if(file_exists(WPFC_WP_PLUGIN_DIR."/wp-fastest-cache-premium/pro/library/delay-js.php")){
 						if(!$this->is_amp($content)){
 							include_once WPFC_WP_PLUGIN_DIR."/wp-fastest-cache-premium/pro/library/delay-js.php";
@@ -948,6 +964,15 @@
 
 					if($this->cacheFilePath){
 						if($this->is_html()){
+
+							$tmp_content = (string) apply_filters('wpfc_buffer_callback_filter', $content, "cache", $this->cacheFilePath);
+
+							if(!$tmp_content){
+								return $content;
+							}else{
+								$content = $tmp_content;
+							}
+
 							$this->createFolder($this->cacheFilePath, $content);
 							do_action('wpfc_is_cacheable_action');
 						}else if($this->is_xml()){
@@ -1055,7 +1080,7 @@
 				return false;
 			}
 
-			if(preg_match('/<html[^\>]*>/si', $buffer) && preg_match('/<body[^\>]*>/si', $buffer) && preg_match('/<\/body>/si', $buffer)){
+			if(preg_match('/<\s*html[^\>]*>/si', $buffer) && preg_match('/<\s*body[^\>]*>/si', $buffer) && preg_match('/<\/body\s*>/si', $buffer)){
 				return false;
 			}
 			// if(strlen($buffer) > 10){
@@ -1224,6 +1249,11 @@
 			}
 
 			if(preg_match("/\?amp\=1$/", $request_uri)){
+				$action = true;
+			}
+
+			if(preg_match("/web-stories\//", $request_uri)){
+				// https://wordpress.org/plugins/web-stories/
 				$action = true;
 			}
 

@@ -106,7 +106,11 @@ class UAGB_Popup_Builder {
 		if ( ! is_front_page() ) {
 			$this->post_id = get_the_ID();
 		}
-		if ( 'spectra-popup' === get_post_type( $this->post_id ) ) {
+		$elementor_preview_active = false;
+		if ( defined( 'ELEMENTOR_VERSION' ) ) { // Check if elementor is active.
+			$elementor_preview_active = \Elementor\Plugin::$instance->preview->is_preview_mode(); 
+		}
+		if ( 'spectra-popup' === get_post_type( $this->post_id ) || $elementor_preview_active ) {
 			return;
 		}
 		$this->enqueue_popup_scripts();
@@ -149,7 +153,7 @@ class UAGB_Popup_Builder {
 		}
 
 		ob_start();
-		echo do_shortcode( $popup->post_content );
+		echo do_shortcode( do_blocks( $popup->post_content ) );
 		$output = ob_get_clean();
 
 		return is_string( $output ) ? $output : '';
@@ -163,16 +167,26 @@ class UAGB_Popup_Builder {
 	 * @since 2.6.0
 	 */
 	public function enqueue_popup_scripts() {
-		$args   = array( 'post_type' => 'spectra-popup' );
+		$args   = array(
+			'post_type'      => 'spectra-popup',
+			'posts_per_page' => -1,
+			'meta_query'     => array( // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
+				array(
+					'key'     => 'spectra-popup-enabled', // The meta key.
+					'value'   => true, // The meta value to compare with.
+					'compare' => '=', // The comparison type.
+					'type'    => 'BOOLEAN', // The meta value type.
+				),
+			),
+		);
 		$popups = new WP_Query( $args );
 
 		while ( $popups->have_posts() ) :
 			$popups->the_post();
 
 			$popup_id = get_the_ID();
-			$enabled  = get_post_meta( $popup_id, 'spectra-popup-enabled', true );
 
-			$render_this_popup = apply_filters( 'spectra_pro_popup_display_filters', $enabled, $this->post_id );
+			$render_this_popup = apply_filters( 'spectra_pro_popup_display_filters', true, $this->post_id );
 
 			if ( $render_this_popup ) {
 				$current_popup_assets = new UAGB_Post_Assets( $popup_id );
@@ -182,7 +196,8 @@ class UAGB_Popup_Builder {
 				}
 			}
 		endwhile;
-		add_action( 'wp_footer', array( $this, 'generate_popup_shortcode' ) );
+		wp_reset_postdata();
+		add_action( 'wp_body_open', array( $this, 'generate_popup_shortcode' ) );
 	}
 
 	/**
@@ -213,13 +228,13 @@ class UAGB_Popup_Builder {
 		unset( $columns['author'] );
 
 		$columns['spectra_popup_type'] = __( 'Type', 'ultimate-addons-for-gutenberg' );
+		$columns['author']             = __( 'Author', 'ultimate-addons-for-gutenberg' );
 
 		$updated_columns = apply_filters( 'spectra_pro_admin_popup_list_titles', $columns );
 		if ( ! is_array( $updated_columns ) || empty( $updated_columns ) ) {
 			$updated_columns = $columns;
 		}
 
-		$updated_columns['author']               = __( 'Author', 'ultimate-addons-for-gutenberg' );
 		$updated_columns['spectra_popup_toggle'] = __( 'Enable/Disable', 'ultimate-addons-for-gutenberg' );
 
 		return $updated_columns;

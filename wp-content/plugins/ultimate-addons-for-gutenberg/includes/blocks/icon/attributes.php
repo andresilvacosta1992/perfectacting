@@ -77,13 +77,25 @@ return array_merge(
 		'iconShadowVOffset'                => 0,
 		'iconShadowBlur'                   => 0,
 		// Box Shadow.
+		'useSeparateBoxShadows'            => true,
 		'iconBoxShadowColor'               => '#00000070',
 		'iconBoxShadowHOffset'             => 0,
 		'iconBoxShadowVOffset'             => 0,
 		'iconBoxShadowBlur'                => '',
 		'iconBoxShadowSpread'              => '',
 		'iconBoxShadowPosition'            => '',
+		'iconBoxShadowColorHover'          => '',
+		'iconBoxShadowHOffsetHover'        => 0,
+		'iconBoxShadowVOffsetHover'        => 0,
+		'iconBoxShadowBlurHover'           => '',
+		'iconBoxShadowSpreadHover'         => '',
+		'iconBoxShadowPositionHover'       => '',
 		// Border.
 		'iconBorderStyle'                  => 'default',
+		// For Global Block Styles.
+		'globalBlockStyleName'             => '',
+		'globalBlockStyleId'               => '',
+		'iconAccessabilityMode'            => '',
+		'iconAccessabilityDesc'            => '',
 	)
 );

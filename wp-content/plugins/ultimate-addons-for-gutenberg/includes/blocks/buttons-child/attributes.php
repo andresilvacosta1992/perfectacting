@@ -7,17 +7,22 @@
  * @package uagb
  */
 
+$disable_v_h_padding = apply_filters( 'uagb_disable_v_h_padding', false );
+
 $border_attribute = UAGB_Block_Helper::uag_generate_border_attribute( 'btn' );
 
 $enable_legacy_blocks = UAGB_Admin_Helper::get_admin_settings_option( 'uag_enable_legacy_blocks', ( 'yes' === get_option( 'uagb-old-user-less-than-2' ) ) ? 'yes' : 'no' );
 
-$v_padding_default = ( 'yes' === get_option( 'uagb-old-user-less-than-2' ) || 'yes' === $enable_legacy_blocks ) ? 10 : '';
+$v_padding_default = false === $disable_v_h_padding && ( 'yes' === get_option( 'uagb-old-user-less-than-2' ) || 'yes' === $enable_legacy_blocks ) ? 10 : '';
 
-$h_padding_default = ( 'yes' === get_option( 'uagb-old-user-less-than-2' ) || 'yes' === $enable_legacy_blocks ) ? 14 : '';
+$h_padding_default = false === $disable_v_h_padding && ( 'yes' === get_option( 'uagb-old-user-less-than-2' ) || 'yes' === $enable_legacy_blocks ) ? 14 : '';
+
+$inherit_from_theme = 'enabled' === UAGB_Admin_Helper::get_admin_settings_option( 'uag_btn_inherit_from_theme', 'disabled' );
 
 return array_merge(
 	array(
-		'inheritFromTheme'       => false,
+		'inheritFromTheme'       => $inherit_from_theme,
+		'buttonType'             => 'primary',
 		'block_id'               => '',
 		'label'                  => '#Click Here',
 		'link'                   => '',
@@ -44,6 +49,8 @@ return array_merge(
 		'hColor'                 => '',
 		'hBackground'            => '',
 		'sizeType'               => 'px',
+		'sizeTypeTablet'         => 'px',
+		'sizeTypeMobile'         => 'px',
 		'sizeMobile'             => '',
 		'sizeTablet'             => '',
 		'lineHeight'             => '',
@@ -87,6 +94,13 @@ return array_merge(
 		'boxShadowBlur'          => '',
 		'boxShadowSpread'        => '',
 		'boxShadowPosition'      => 'outset',
+		'useSeparateBoxShadows'  => true,
+		'boxShadowColorHover'    => '',
+		'boxShadowHOffsetHover'  => 0,
+		'boxShadowVOffsetHover'  => 0,
+		'boxShadowBlurHover'     => '',
+		'boxShadowSpreadHover'   => '',
+		'boxShadowPositionHover' => 'outset',
 		'iconColor'              => '',
 		'iconHColor'             => '',
 		'buttonSize'             => '',
@@ -119,6 +133,9 @@ return array_merge(
 		'borderStyle'            => 'solid',
 		'borderColor'            => '#000',
 		'borderHColor'           => '',
+		// For Global Block Styles.
+		'globalBlockStyleName'   => '',
+		'globalBlockStyleId'     => '',
 	),
 	$border_attribute
 );

@@ -37,10 +37,15 @@ class Loader {
 	 */
 	protected function populate_classes() {
 
+		$this->populate_common();
 		$this->populate_frontend();
 		$this->populate_admin();
+		$this->populate_caches();
+		$this->populate_fields();
 		$this->populate_forms_overview();
+		$this->populate_entries();
 		$this->populate_builder();
+		$this->populate_db();
 		$this->populate_migrations();
 		$this->populate_capabilities();
 		$this->populate_tasks();
@@ -49,7 +54,20 @@ class Loader {
 		$this->populate_logger();
 		$this->populate_education();
 		$this->populate_robots();
-		$this->populate_anti_spam_filters();
+		$this->populate_anti_spam();
+	}
+
+	/**
+	 * Populate common classes.
+	 *
+	 * @since 1.8.6
+	 */
+	private function populate_common() {
+
+		$this->classes[] = [
+			'name' => 'API',
+			'id'   => 'api',
+		];
 	}
 
 	/**
@@ -158,6 +176,10 @@ class Loader {
 				'id'   => 'addons_cache',
 			],
 			[
+				'name' => 'Admin\CoreInfoCache',
+				'id'   => 'core_info_cache',
+			],
+			[
 				'name' => 'Admin\Addons\Addons',
 				'id'   => 'addons',
 			],
@@ -173,16 +195,13 @@ class Loader {
 				'name' => 'Admin\Notifications\EventDriven',
 			],
 			[
-				'name' => 'Admin\Entries\Edit',
-				'id'   => 'entries_edit',
+				'name' => 'Admin\Entries\Handler',
 				'hook' => 'admin_init',
 			],
 			[
 				'name' => 'Admin\Pages\Templates',
+				'id'   => 'templates_page',
 				'hook' => 'admin_init',
-			],
-			[
-				'name' => 'Admin\Entries\Export\Export',
 			],
 			[
 				'name' => 'Admin\Challenge',
@@ -202,12 +221,30 @@ class Loader {
 				'hook' => 'admin_init',
 			],
 			[
+				'name' => 'Admin\Settings\Email',
+				'hook' => 'admin_init',
+			],
+			[
 				'name' => 'Admin\Settings\Captcha\Page',
+				'hook' => 'admin_init',
+			],
+			[
+				'name' => 'Admin\Settings\Payments',
 				'hook' => 'admin_init',
 			],
 			[
 				'name' => 'Admin\Tools\Tools',
 				'hook' => 'current_screen',
+			],
+			[
+				'name' => 'Admin\Payments\Payments',
+				'hook' => 'init',
+			],
+			[
+				'name'      => 'Admin\Payments\Views\Overview\Ajax',
+				'hook'      => 'admin_init',
+				'run'       => 'hooks',
+				'condition' => wpforms_is_admin_ajax(),
 			],
 			[
 				'name'      => 'Admin\Tools\Importers',
@@ -225,8 +262,104 @@ class Loader {
 			],
 			[
 				'name' => 'Forms\Fields\Richtext\EntryViewContent',
+			],
+			[
+				'name' => 'Admin\DashboardWidget',
+				'hook' => wpforms()->is_pro() ? 'admin_init' : 'init',
+			],
+			[
+				'name' => 'Emails\Preview',
+				'hook' => 'admin_init',
+			],
+			[
+				'name' => 'Admin\Addons\GoogleSheets',
+				'hook' => 'admin_init',
+			],
+			[
+				'name' => 'Admin\Addons\Calculations',
+				'id'   => 'calculations',
+			],
+			[
+				'name' => 'Admin\PluginList',
+				'hook' => 'admin_init',
+			],
+			[
+				'name' => 'Admin\Splash\SplashScreen',
+				'id'   => 'splash_screen',
+				'hook' => 'admin_init',
+			],
+			[
+				'name' => 'Admin\Splash\SplashCache',
+				'id'   => 'splash_cache',
+			],
+			[
+				'name' => 'Admin\Splash\SplashUpgrader',
+				'id'   => 'splash_upgrader',
+				'hook' => 'plugins_loaded',
 			]
 		);
+	}
+
+	/**
+	 * Populate Caches related classes.
+	 *
+	 * @since 1.8.7
+	 */
+	private function populate_caches() {
+
+		array_push(
+			$this->classes,
+			[
+				'name' => 'LicenseApi\PluginUpdateCache',
+				'id'   => 'license_api_plugin_update_cache',
+			],
+			[
+				'name' => 'LicenseApi\PluginInfoCache',
+				'id'   => 'license_api_plugin_info_cache',
+			],
+			[
+				'name' => 'LicenseApi\ValidateKeyCache',
+				'id'   => 'license_api_validate_key_cache',
+			]
+		);
+	}
+
+	/**
+	 * Populate Fields related classes.
+	 *
+	 * @since 1.8.2
+	 */
+	private function populate_fields() {
+
+		$this->classes[] = [
+			'name' => 'Forms\Fields\PaymentCheckbox\Field',
+			'hook' => 'init',
+		];
+
+		$this->classes[] = [
+			'name' => 'Forms\Fields\PaymentMultiple\Field',
+			'hook' => 'init',
+		];
+
+		$this->classes[] = [
+			'name' => 'Forms\Fields\PaymentSelect\Field',
+			'hook' => 'init',
+		];
+
+		$this->classes[] = [
+			'name' => 'Forms\Fields\PaymentSingle\Field',
+			'hook' => 'init',
+		];
+
+		$this->classes[] = [
+			'name' => 'Forms\Fields\PaymentTotal\Field',
+			'hook' => 'init',
+		];
+
+		// Load custom captcha field class.
+		$this->classes[] = [
+			'name' => 'Forms\Fields\CustomCaptcha\Field',
+		];
 	}
 
 	/**
@@ -236,12 +369,20 @@ class Loader {
 	 */
 	private function populate_forms_overview() {
 
-		if ( ! wpforms_is_admin_page( 'overview' ) && ! wp_doing_ajax() ) {
+		if ( ! wpforms_is_admin_page( 'overview' ) && ! wpforms_is_admin_ajax() ) {
 			return;
 		}
 
 		array_push(
 			$this->classes,
+			[
+				'name' => 'Admin\Forms\Page',
+				'id'   => 'forms_overview',
+			],
+			[
+				'name' => 'Admin\Forms\Ajax\Columns',
+				'id'   => 'forms_columns_ajax',
+			],
 			[
 				'name' => 'Admin\Forms\Ajax\Tags',
 				'id'   => 'forms_tags_ajax',
@@ -266,6 +407,53 @@ class Loader {
 	}
 
 	/**
+	 * Populate Entries related classes.
+	 *
+	 * @since 1.8.6
+	 */
+	private function populate_entries() {
+
+		array_push(
+			$this->classes,
+			[
+				'name' => 'Admin\Entries\PageOptions',
+				'id'   => 'entries_page_options',
+			],
+			[
+				'name' => 'Admin\Entries\Page',
+				'id'   => 'entries_list_page',
+				'hook' => 'admin_init',
+			],
+			[
+				'name' => 'Admin\Entries\Overview\Page',
+				'hook' => 'admin_init',
+			],
+			[
+				'name'      => 'Admin\Entries\Overview\Ajax',
+				'hook'      => 'admin_init',
+				'run'       => 'hooks',
+				'condition' => wpforms_is_admin_ajax(),
+			],
+			[
+				'name' => 'Admin\Entries\Ajax\Columns',
+				'id'   => 'entries_columns_ajax',
+			],
+			[
+				'name' => 'Admin\Entries\Edit',
+				'id'   => 'entries_edit',
+				'hook' => 'admin_init',
+			],
+			[
+				'name' => 'Admin\Entries\Export\Export',
+			],
+			[
+				'name' => 'Admin\Entries\DefaultScreen',
+				'hook' => 'admin_init',
+			]
+		);
+	}
+
+	/**
 	 * Populate Form Builder related classes.
 	 *
 	 * @since 1.6.8
@@ -274,6 +462,10 @@ class Loader {
 
 		array_push(
 			$this->classes,
+			[
+				'name' => 'Admin\Builder\HelpCache',
+				'id'   => 'builder_help_cache',
+			],
 			[
 				'name' => 'Admin\Builder\Help',
 				'id'   => 'builder_help',
@@ -298,6 +490,15 @@ class Loader {
 				'hook' => 'wpforms_builder_init',
 			],
 			[
+				'name' => 'Admin\Builder\Notifications\Advanced\EmailTemplate',
+				'hook' => 'wpforms_builder_init',
+			],
+			[
+				'name' => 'Admin\Builder\ContextMenu',
+				'hook' => 'wpforms_builder_init',
+				'id'   => 'context_menu',
+			],
+			[
 				'name' => 'Admin\Builder\Notifications\Advanced\Settings',
 			],
 			[
@@ -305,8 +506,40 @@ class Loader {
 			],
 			[
 				'name' => 'Admin\Builder\Notifications\Advanced\EntryCsvAttachment',
+			],
+			[
+				'name' => 'Admin\Builder\Ajax\PanelLoader',
 			]
 		);
+	}
+
+	/**
+	 * Populate database classes.
+	 *
+	 * @since 1.8.2
+	 */
+	private function populate_db() {
+
+		$this->classes[] = [
+			'name' => 'Db\Payments\Payment',
+			'id'   => 'payment',
+			'hook' => false,
+			'run'  => false,
+		];
+
+		$this->classes[] = [
+			'name' => 'Db\Payments\Meta',
+			'id'   => 'payment_meta',
+			'hook' => false,
+			'run'  => false,
+		];
+
+		$this->classes[] = [
+			'name' => 'Db\Payments\Queries',
+			'id'   => 'payment_queries',
+			'hook' => false,
+			'run'  => false,
+		];
 	}
 
 	/**
@@ -376,14 +609,11 @@ class Loader {
 	 */
 	private function populate_smart_tags() {
 
-		array_push(
-			$this->classes,
-			[
-				'name' => 'SmartTags\SmartTags',
-				'id'   => 'smart_tags',
-				'run'  => 'hooks',
-			]
-		);
+		$this->classes[] = [
+			'name' => 'SmartTags\SmartTags',
+			'id'   => 'smart_tags',
+			'run'  => 'hooks',
+		];
 	}
 
 	/**
@@ -393,15 +623,12 @@ class Loader {
 	 */
 	private function populate_logger() {
 
-		array_push(
-			$this->classes,
-			[
-				'name' => 'Logger\Log',
-				'id'   => 'log',
-				'hook' => false,
-				'run'  => 'hooks',
-			]
-		);
+		$this->classes[] = [
+			'name' => 'Logger\Log',
+			'id'   => 'log',
+			'hook' => false,
+			'run'  => 'hooks',
+		];
 	}
 
 	/**
@@ -448,6 +675,7 @@ class Loader {
 		// Education features classes.
 		$features = [
 			'LiteConnect',
+			'Builder\Calculations',
 			'Builder\Captcha',
 			'Builder\Fields',
 			'Builder\Settings',
@@ -486,11 +714,11 @@ class Loader {
 	}
 
 	/**
-	 * Populate Country and Keyword filters from AntiSpam settings.
+	 * Populate AntiSpam loaded classes.
 	 *
 	 * @since 1.7.8
 	 */
-	private function populate_anti_spam_filters() {
+	private function populate_anti_spam() {
 
 		array_push(
 			$this->classes,
@@ -500,6 +728,10 @@ class Loader {
 			],
 			[
 				'name' => 'AntiSpam\KeywordFilter',
+				'hook' => 'init',
+			],
+			[
+				'name' => 'AntiSpam\SpamEntry',
 				'hook' => 'init',
 			]
 		);

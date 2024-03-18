@@ -21,38 +21,54 @@ class DashboardWidget extends Widget {
 	public $settings;
 
 	/**
-	 * Constructor.
-	 *
-	 * @since 1.5.0
-	 */
-	public function __construct() {
-
-		add_action( 'admin_init', [ $this, 'init' ] );
-	}
-	/**
 	 * Init class.
 	 *
 	 * @since 1.5.5
 	 */
-	public function init() {
+	public function init() { // phpcs:ignore WPForms.PHP.HooksMethod.InvalidPlaceForAddingHooks
+
+		// phpcs:disable WPForms.PHP.ValidateHooks.InvalidHookName
+		/**
+		 * Allow disabling the widget.
+		 *
+		 * @since 1.5.1
+		 *
+		 * @param bool $load Should the widget be loaded?
+		 */
+		if ( ! apply_filters( 'wpforms_admin_dashboardwidget', true ) ) {
+			return;
+		}
+		// phpcs:enable WPForms.PHP.ValidateHooks.InvalidHookName
+
+		add_action( 'wpforms_process_complete', [ static::class, 'clear_widget_cache' ] );
+		add_action( 'admin_init', [ $this, 'admin_init' ] );
+	}
+
+	/**
+	 * Admin init class.
+	 *
+	 * @since 1.8.3
+	 */
+	public function admin_init() { // phpcs:ignore WPForms.PHP.HooksMethod.InvalidPlaceForAddingHooks
 
 		// This widget should be displayed for certain high-level users only.
-		if ( ! wpforms_current_user_can() ) {
+		if ( ! wpforms_current_user_can( 'view_forms' ) ) {
 			return;
 		}
 
-		global $pagenow;
+		add_action( 'wpforms_create_form', [ static::class, 'clear_widget_cache' ] );
+		add_action( 'wpforms_save_form', [ static::class, 'clear_widget_cache' ] );
+		add_action( 'wpforms_delete_form', [ static::class, 'clear_widget_cache' ] );
 
-		// phpcs:disable WordPress.Security.NonceVerification.Recommended
-		$is_admin_page   = $pagenow === 'index.php' && empty( $_GET['page'] );
-		$is_ajax_request = wp_doing_ajax() && isset( $_REQUEST['action'] ) && strpos( sanitize_key( $_REQUEST['action'] ), 'wpforms_dash_widget' ) !== false;
-		// phpcs:enable WordPress.Security.NonceVerification.Recommended
+		/**
+		 * Clear cache after Lite plugin deactivation.
+		 *
+		 * Also triggered when the user upgrades plugin to the Pro version.
+		 * After activation of the Pro version the cache will be cleared.
+		 */
+		add_action( 'deactivate_wpforms-lite/wpforms.php', [ static::class, 'clear_widget_cache' ] );
 
-		if ( ! $is_admin_page && ! $is_ajax_request ) {
-			return;
-		}
-
-		if ( ! apply_filters( 'wpforms_admin_dashboardwidget', true ) ) {
+		if ( ! $this->is_dashboard_page() && ! $this->is_dashboard_widget_ajax_request() ) {
 			return;
 		}
 
@@ -100,11 +116,6 @@ class DashboardWidget extends Widget {
 		add_action( 'wp_dashboard_setup', [ $this, 'widget_register' ] );
 		add_action( 'admin_init', [ $this, 'hide_widget' ] );
 		add_action( "wp_ajax_wpforms_{$widget_slug}_save_widget_meta", [ $this, 'save_widget_meta_ajax' ] );
-
-		add_action( 'wpforms_create_form', [ static::class, 'clear_widget_cache' ] );
-		add_action( 'wpforms_save_form', [ static::class, 'clear_widget_cache' ] );
-		add_action( 'wpforms_delete_form', [ static::class, 'clear_widget_cache' ] );
-		add_action( 'wpforms_process_entry_save', [ static::class, 'clear_widget_cache' ] );
 	}
 
 	/**
@@ -130,18 +141,10 @@ class DashboardWidget extends Widget {
 		);
 
 		wp_enqueue_script(
-			'wpforms-moment',
-			WPFORMS_PLUGIN_URL . 'assets/lib/moment/moment.min.js',
-			[],
-			'2.22.2',
-			true
-		);
-
-		wp_enqueue_script(
 			'wpforms-chart',
 			WPFORMS_PLUGIN_URL . 'assets/lib/chart.min.js',
-			[ 'wpforms-moment' ],
-			'2.7.2',
+			[ 'moment' ],
+			'2.9.4',
 			true
 		);
 
@@ -224,6 +227,12 @@ class DashboardWidget extends Widget {
 			! $hide_recommended
 		) {
 			$this->recommended_plugin_block_html( $plugin );
+		}
+
+		$hide_welcome = $this->widget_meta( 'get', 'hide_welcome_block' );
+
+		if ( ! $hide_welcome ) {
+			$this->welcome_block_html();
 		}
 
 		echo '</div><!-- .wpforms-dash-widget -->';
@@ -408,7 +417,7 @@ class DashboardWidget extends Widget {
 		);
 
 		?>
-		<div class="wpforms-dash-widget-recommended-plugin-block">
+		<div class="wpforms-dash-widget-block wpforms-dash-widget-recommended-plugin-block">
 			<span class="wpforms-dash-widget-recommended-plugin">
 				<span class="recommended"><?php esc_html_e( 'Recommended Plugin:', 'wpforms-lite' ); ?></span>
 				<strong><?php echo esc_html( $plugin['name'] ); ?></strong>
@@ -421,7 +430,55 @@ class DashboardWidget extends Widget {
 					<a href="<?php echo esc_url( $plugin['more'] ); ?>?utm_source=wpformsplugin&utm_medium=link&utm_campaign=wpformsdashboardwidget"><?php esc_html_e( 'Learn More', 'wpforms-lite' ); ?></a>
 				</span>
 			</span>
-			<button type="button" id="wpforms-dash-widget-dismiss-recommended-plugin-block" class="wpforms-dash-widget-dismiss-recommended-plugin-block" title="<?php esc_html_e( 'Dismiss recommended plugin', 'wpforms-lite' ); ?>">
+			<button type="button" class="wpforms-dash-widget-dismiss-icon" title="<?php esc_html_e( 'Dismiss recommended plugin', 'wpforms-lite' ); ?>" data-field="hide_recommended_block">
+				<span class="dashicons dashicons-no-alt"></span>
+			</button>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Welcome block HTML.
+	 *
+	 * @since 1.8.7
+	 */
+	public function welcome_block_html() {
+
+		?>
+		<div class="wpforms-dash-widget-block wpforms-dash-widget-welcome-block">
+			<span class="wpforms-dash-widget-welcome">
+				<?php
+					$welcome_message = sprintf(
+						wp_kses(
+							/* translators: %s - WPForms version. */
+							__( 'Welcome to <strong>WPForms %s</strong>', 'wpforms-lite' ),
+							[
+								'strong' => [],
+							]
+						),
+						WPFORMS_VERSION
+					);
+
+					echo wp_kses(
+						/**
+						 * Filters the welcome message in the Dashboard Widget.
+						 *
+						 * @since 1.8.7
+						 *
+						 * @param string $welcome_message Welcome message.
+						 */
+						apply_filters( 'wpforms_lite_admin_dashboard_widget_welcome_block_html_message', $welcome_message ),
+						[
+							'a'      => [
+								'href'  => [],
+								'class' => [],
+							],
+							'strong' => [],
+						]
+					);
+				?>
+			</span>
+			<button type="button" class="wpforms-dash-widget-dismiss-icon" title="<?php esc_html_e( 'Dismiss recommended plugin', 'wpforms-lite' ); ?>" data-field="hide_welcome_block">
 				<span class="dashicons dashicons-no-alt"></span>
 			</button>
 		</div>
@@ -454,7 +511,7 @@ class DashboardWidget extends Widget {
 			return $cache;
 		}
 
-		$forms = wpforms()->form->get( '', [ 'fields' => 'ids' ] );
+		$forms = wpforms()->get( 'form' )->get( '', [ 'fields' => 'ids' ] );
 
 		if ( empty( $forms ) || ! is_array( $forms ) ) {
 			return [];

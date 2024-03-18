@@ -205,7 +205,8 @@ if($xyz_ips_message == 8)
 	</thead>
 	<tbody>
 		<?php
-		if( count($entries)>0 ) {
+		if( !empty($entries) )//if( count($entries)>0 )
+		 {
 			$count=1;
 			$class = '';
 			foreach( $entries as $entry ) {

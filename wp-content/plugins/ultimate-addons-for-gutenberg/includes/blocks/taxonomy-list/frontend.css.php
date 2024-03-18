@@ -3,7 +3,8 @@
  * Frontend CSS & Google Fonts loading File.
  *
  * @since 2.0.0
- *
+ * @var string[] $attr
+ * @var int $id
  * @package uagb
  */
 
@@ -173,11 +174,9 @@ $t_selectors = array(
 		'grid-template-columns' => 'repeat(' . $attr['tcolumns'] . ', 1fr)',
 	),
 	'.uagb-taxonomy__outer-wrap.uagb-layout-grid' => array(
-		'grid-column-gap' => UAGB_Helper::get_css_value( $attr['columnGapTablet'], 'px' ),
-		'grid-row-gap'    => UAGB_Helper::get_css_value( $attr['rowGapTablet'], 'px' ),
-	),
-	'.uagb-layout-grid .uagb-taxomony-box'        => array(
-		'grid-column-gap' => UAGB_Helper::get_css_value( $attr['columnGapTablet'], 'px' ),
+		'grid-template-columns' => 'repeat(' . $attr['tcolumns'] . ', 1fr)',
+		'grid-column-gap'       => UAGB_Helper::get_css_value( $attr['columnGapTablet'], 'px' ),
+		'grid-row-gap'          => UAGB_Helper::get_css_value( $attr['rowGapTablet'], 'px' ),
 	),
 	'.uagb-layout-grid .uagb-taxomony-box'        => array(
 		'padding-left'   => UAGB_Helper::get_css_value( $left_padding_tablet, $attr['tabletContentPaddingUnit'] ),
@@ -193,13 +192,8 @@ $t_selectors = array(
 $m_selectors = array(
 	'.uagb-taxonomy__outer-wrap.uagb-layout-grid' => array(
 		'grid-template-columns' => 'repeat(' . $attr['mcolumns'] . ', 1fr)',
-	),
-	'.uagb-taxonomy__outer-wrap.uagb-layout-grid' => array(
-		'grid-column-gap' => UAGB_Helper::get_css_value( $attr['columnGapMobile'], 'px' ),
-		'grid-row-gap'    => UAGB_Helper::get_css_value( $attr['rowGapMobile'], 'px' ),
-	),
-	'.uagb-layout-grid .uagb-taxomony-box'        => array(
-		'grid-column-gap' => UAGB_Helper::get_css_value( $attr['columnGapMobile'], 'px' ),
+		'grid-column-gap'       => UAGB_Helper::get_css_value( $attr['columnGapMobile'], 'px' ),
+		'grid-row-gap'          => UAGB_Helper::get_css_value( $attr['rowGapMobile'], 'px' ),
 	),
 	'.uagb-layout-grid .uagb-taxomony-box'        => array(
 		'padding-left'   => UAGB_Helper::get_css_value( $left_padding_mobile, $attr['mobileContentPaddingUnit'] ),

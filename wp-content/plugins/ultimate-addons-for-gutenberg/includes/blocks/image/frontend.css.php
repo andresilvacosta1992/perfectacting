@@ -7,16 +7,17 @@
  * @package uagb
  */
 
+/**
+ * Adding this comment to avoid PHPStan errors of undefined variable as these variables are defined else where.
+ *
+ * @var int $id
+ */
+
 // Add fonts.
 UAGB_Block_JS::blocks_advanced_image_gfont( $attr );
 
 $m_selectors = array();
 $t_selectors = array();
-
-$imageBoxShadowPosition = $attr['imageBoxShadowPosition'];
-if ( 'outset' === $attr['imageBoxShadowPosition'] ) {
-	$imageBoxShadowPosition = '';
-}
 
 $image_border_css          = UAGB_Block_Helper::uag_generate_border_css( $attr, 'image' );
 $image_border_css_tablet   = UAGB_Block_Helper::uag_generate_border_css( $attr, 'image', 'tablet' );
@@ -71,6 +72,27 @@ switch ( $attr['alignMobile'] ) {
 		break;
 }
 
+$box_shadow_properties       = array(
+	'horizontal' => $attr['imageBoxShadowHOffset'],
+	'vertical'   => $attr['imageBoxShadowVOffset'],
+	'blur'       => $attr['imageBoxShadowBlur'],
+	'spread'     => $attr['imageBoxShadowSpread'],
+	'color'      => $attr['imageBoxShadowColor'],
+	'position'   => $attr['imageBoxShadowPosition'],
+);
+$box_shadow_hover_properties = array(
+	'horizontal' => $attr['imageBoxShadowHOffsetHover'],
+	'vertical'   => $attr['imageBoxShadowVOffsetHover'],
+	'blur'       => $attr['imageBoxShadowBlurHover'],
+	'spread'     => $attr['imageBoxShadowSpreadHover'],
+	'color'      => $attr['imageBoxShadowColorHover'],
+	'position'   => $attr['imageBoxShadowPositionHover'],
+	'alt_color'  => $attr['imageBoxShadowColor'],
+);
+
+$box_shadow_css       = UAGB_Block_Helper::generate_shadow_css( $box_shadow_properties );
+$box_shadow_hover_css = UAGB_Block_Helper::generate_shadow_css( $box_shadow_hover_properties );
+
 $selectors = array(
 	'.wp-block-uagb-image'                            => array(
 		'margin-top'      => UAGB_Helper::get_css_value( $attr['imageTopMargin'], $attr['imageMarginUnit'] ),
@@ -86,7 +108,7 @@ $selectors = array(
 	),
 	'.wp-block-uagb-image--layout-default figure img' => array_merge(
 		array(
-			'box-shadow' => UAGB_Helper::get_css_value( $attr['imageBoxShadowHOffset'], 'px' ) . ' ' . UAGB_Helper::get_css_value( $attr['imageBoxShadowVOffset'], 'px' ) . ' ' . UAGB_Helper::get_css_value( $attr['imageBoxShadowBlur'], 'px' ) . ' ' . UAGB_Helper::get_css_value( $attr['imageBoxShadowSpread'], 'px' ) . ' ' . $attr['imageBoxShadowColor'] . ' ' . $imageBoxShadowPosition,
+			'box-shadow' => $box_shadow_css,
 		),
 		$image_border_css
 	),
@@ -99,7 +121,7 @@ $selectors = array(
 		'margin-right'  => UAGB_Helper::get_css_value( $attr['captionRightMargin'], $attr['captionMarginUnit'] ),
 		'margin-bottom' => UAGB_Helper::get_css_value( $attr['captionBottomMargin'], $attr['captionMarginUnit'] ),
 		'margin-left'   => UAGB_Helper::get_css_value( $attr['captionLeftMargin'], $attr['captionMarginUnit'] ),
-		'text-align'    => $attr['captionAlign'],
+		'align-self'    => $attr['captionAlign'],
 	),
 	'.wp-block-uagb-image .wp-block-uagb-image__figure figcaption a' => array(
 		'color' => $attr['captionColor'],
@@ -107,7 +129,7 @@ $selectors = array(
 	// overlay.
 	'.wp-block-uagb-image--layout-overlay figure img' => array_merge(
 		array(
-			'box-shadow' => UAGB_Helper::get_css_value( $attr['imageBoxShadowHOffset'], 'px' ) . ' ' . UAGB_Helper::get_css_value( $attr['imageBoxShadowVOffset'], 'px' ) . ' ' . UAGB_Helper::get_css_value( $attr['imageBoxShadowBlur'], 'px' ) . ' ' . UAGB_Helper::get_css_value( $attr['imageBoxShadowSpread'], 'px' ) . ' ' . $attr['imageBoxShadowColor'] . ' ' . $imageBoxShadowPosition,
+			'box-shadow' => $box_shadow_css,
 		),
 		$image_border_css
 	),
@@ -189,6 +211,17 @@ if ( 'hover' === $attr['seperatorShowOn'] ) {
 	);
 }
 
+// If using separate box shadow hover settings, then generate CSS for it.
+if ( $attr['useSeparateBoxShadows'] ) {
+	$selectors['.wp-block-uagb-image--layout-default figure img:hover'] = array(
+		'box-shadow' => $box_shadow_hover_css,
+	);
+
+	$selectors['.wp-block-uagb-image--layout-overlay figure img:hover'] = array(
+		'box-shadow' => $box_shadow_hover_css,
+	);
+
+};
 
 if ( 'none' !== $attr['maskShape'] ) {
 	$imagePath = UAGB_URL . 'assets/images/masks/' . $attr['maskShape'] . '.svg';
@@ -196,7 +229,7 @@ if ( 'none' !== $attr['maskShape'] ) {
 		$imagePath = $attr['maskCustomShape']['url'];
 	}
 	if ( ! empty( $imagePath ) ) {
-		$selectors['.wp-block-uagb-image .wp-block-uagb-image__figure img'] = array(
+		$selectors[ '.wp-block-uagb-image .wp-block-uagb-image__figure img, .uagb-block-' . $id . ' .wp-block-uagb-image--layout-overlay__color-wrapper' ] = array(
 			'mask-image'            => 'url(' . $imagePath . ')',
 			'-webkit-mask-image'    => 'url(' . $imagePath . ')',
 			'mask-size'             => $attr['maskSize'],
@@ -210,8 +243,8 @@ if ( 'none' !== $attr['maskShape'] ) {
 }
 
 // tablet.
-$t_selectors['.wp-block-uagb-image--layout-default figure']           = $image_border_css_tablet;
-$t_selectors['.wp-block-uagb-image--layout-overlay figure']           = $image_border_css_tablet;
+$t_selectors['.wp-block-uagb-image--layout-default figure img']       = $image_border_css_tablet;
+$t_selectors['.wp-block-uagb-image--layout-overlay figure img']       = $image_border_css_tablet;
 $t_selectors['.wp-block-uagb-image .wp-block-uagb-image__figure img'] = array(
 	'width' => UAGB_Helper::get_css_value( $attr['widthTablet'], 'px' ),
 );
@@ -258,8 +291,8 @@ if ( $attr['customHeightSetTablet'] ) {
 }
 
 // mobile.
-$m_selectors['.wp-block-uagb-image--layout-default figure']           = $image_border_css_mobile;
-$m_selectors['.wp-block-uagb-image--layout-overlay figure']           = $image_border_css_mobile;
+$m_selectors['.wp-block-uagb-image--layout-default figure img']       = $image_border_css_mobile;
+$m_selectors['.wp-block-uagb-image--layout-overlay figure img']       = $image_border_css_mobile;
 $m_selectors['.wp-block-uagb-image .wp-block-uagb-image__figure img'] = array(
 	'width' => UAGB_Helper::get_css_value( $attr['widthMobile'], 'px' ),
 );
@@ -317,4 +350,8 @@ $base_selector = '.uagb-block-';
 $combined_selectors = UAGB_Helper::get_typography_css( $attr, 'heading', '.wp-block-uagb-image--layout-overlay .wp-block-uagb-image--layout-overlay__inner .uagb-image-heading', $combined_selectors );
 $combined_selectors = UAGB_Helper::get_typography_css( $attr, 'caption', '.wp-block-uagb-image .wp-block-uagb-image__figure figcaption', $combined_selectors );
 
-return UAGB_Helper::generate_all_css( $combined_selectors, $base_selector . $id );
+return UAGB_Helper::generate_all_css(
+	$combined_selectors,
+	$base_selector . $id,
+	isset( $gbs_class ) ? $gbs_class : ''
+);

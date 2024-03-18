@@ -157,7 +157,6 @@ return array_merge(
 		'paddingRightMobile'         => '',
 		'paddingBottomMobile'        => '',
 		'paddingLeftMobile'          => '',
-		'contentPaddingUnit'         => 'px',
 		'paddingUnit'                => 'px',
 		'mobilePaddingUnit'          => 'px',
 		'tabletPaddingUnit'          => 'px',
@@ -204,6 +203,7 @@ return array_merge(
 		'dotsMarginTopTablet'        => '',
 		'dotsMarginTopMobile'        => '',
 		'dotsMarginTopUnit'          => 'px',
+		'useSeparateBoxShadows'      => true,
 	),
 	$btn_border_attribute,
 	$overall_border_attribute

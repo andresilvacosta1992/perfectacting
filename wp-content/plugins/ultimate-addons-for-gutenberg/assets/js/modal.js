@@ -1,7 +1,9 @@
 document.addEventListener( 'UAGModalEditor', function ( e ) {
 	UAGBModal.init( '.uagb-block-' + e.detail.block_id, true );
 } );
-
+document.addEventListener( 'AstraQuickViewForModal', function ( e ) {
+	UAGBModal.init( e.detail.class_name, false );
+} );
 window.UAGBModal = {
 	init( mainSelector, isAdmin ) {
 		const document_element = UAGBModal._getDocumentElement();
@@ -34,6 +36,13 @@ window.UAGBModal = {
 						e.preventDefault();
 						if ( ! innerModal.classList.contains( 'active' ) ) {
 							innerModal.classList.add( 'active' );
+							// Once this modal is active, create a focusable element to add focus onto the modal and then remove it.
+							const focusElement = document.createElement( 'button' );
+							focusElement.style.position = 'absolute';
+							focusElement.style.opacity = '0';
+							const modalFocus = innerModal.insertBefore( focusElement, innerModal.firstChild );
+							modalFocus.focus();
+							modalFocus.remove();
 							if (
 								! bodyWrap.classList.contains( 'hide-scroll' ) &&
 								! siteEditTheme?.length &&
@@ -44,12 +53,15 @@ window.UAGBModal = {
 							}
 						}
 					} );
-
+					if ( '.uagb-modal-wrapper' === mainSelector ) { // When we get mainSelector as a uagb-modal-wrapper from AstraQuickViewForModal event we get null for closeModal. So avoid this we need to use uagb-modal-popup as mainSelector.
+						mainSelector = '.uagb-modal-popup';
+					}
 					const closeModal = innerModal.querySelector( `${ mainSelector } .uagb-modal-popup-close` );
 					if ( closeModal ) {
 						closeModal.addEventListener( 'click', function () {
 							if ( innerModal.classList.contains( 'active' ) ) {
 								innerModal.classList.remove( 'active' );
+								modalTrigger?.focus();
 							}
 							if ( bodyWrap.classList.contains( 'hide-scroll' ) ) {
 								UAGBModal.closeModalScrollCheck( bodyWrap, document_element );
@@ -77,6 +89,7 @@ window.UAGBModal = {
 						if ( 27 === e.keyCode && 'enable' === closeOnEsc ) {
 							if ( innerModal.classList.contains( 'active' ) ) {
 								innerModal.classList.remove( 'active' );
+								modalTrigger?.focus();
 							}
 							if ( bodyWrap.classList.contains( 'hide-scroll' ) ) {
 								UAGBModal.closeModalScrollCheck( bodyWrap, document_element );

@@ -215,7 +215,7 @@ class Frontend {
 		$form_data    = apply_filters( 'wpforms_frontend_form_data', wpforms_decode( $form->post_content ) );
 		$form_id      = absint( $form->ID );
 		$this->action = esc_url_raw( remove_query_arg( 'wpforms' ) );
-		$errors       = empty( wpforms()->process->errors[ $form_id ] ) ? [] : wpforms()->process->errors[ $form_id ];
+		$errors       = empty( wpforms()->get( 'process' )->errors[ $form_id ] ) ? [] : wpforms()->get( 'process' )->errors[ $form_id ];
 		$title        = filter_var( $title, FILTER_VALIDATE_BOOLEAN );
 		$description  = filter_var( $description, FILTER_VALIDATE_BOOLEAN );
 
@@ -863,7 +863,7 @@ class Frontend {
 		}
 
 		// Check if there are errors.
-		if ( ! empty( wpforms()->process->errors[ $form_id ][ $field_id ] ) ) {
+		if ( ! empty( wpforms()->get( 'process' )->errors[ $form_id ][ $field_id ] ) ) {
 			$attributes['input_class'][] = 'wpforms-error';
 		}
 
@@ -1018,7 +1018,7 @@ class Frontend {
 		$field      = $this->filter_field( $field, $form_data, $attributes );
 		$form_id    = absint( $form_data['id'] );
 		$field_id   = absint( $field['id'] );
-		$error      = ! empty( wpforms()->process->errors[ $form_id ][ $field_id ] ) ? wpforms()->process->errors[ $form_id ][ $field_id ] : '';
+		$error      = ! empty( wpforms()->get( 'process' )->errors[ $form_id ][ $field_id ] ) ? wpforms()->get( 'process' )->errors[ $form_id ][ $field_id ] : '';
 
 		return [ $field, $attributes, $error ];
 	}
@@ -1629,7 +1629,7 @@ class Frontend {
 
 		wp_enqueue_script(
 			'wpforms-generic-utils',
-			WPFORMS_PLUGIN_URL . "assets/js/utils{$min}.js",
+			WPFORMS_PLUGIN_URL . "assets/js/share/utils{$min}.js",
 			[ 'jquery' ],
 			WPFORMS_VERSION,
 			true
@@ -1638,7 +1638,7 @@ class Frontend {
 		// Load base JS.
 		wp_enqueue_script(
 			'wpforms',
-			WPFORMS_PLUGIN_URL . "assets/js/wpforms{$min}.js",
+			WPFORMS_PLUGIN_URL . "assets/js/frontend/wpforms{$min}.js",
 			[ 'jquery' ],
 			WPFORMS_VERSION,
 			true
@@ -1648,7 +1648,7 @@ class Frontend {
 		if ( $this->render_engine === 'modern' ) {
 			wp_enqueue_script(
 				'wpforms-modern',
-				WPFORMS_PLUGIN_URL . "assets/js/wpforms-modern{$min}.js",
+				WPFORMS_PLUGIN_URL . "assets/js/frontend/wpforms-modern{$min}.js",
 				[ 'wpforms' ],
 				WPFORMS_VERSION,
 				true
@@ -1659,7 +1659,12 @@ class Frontend {
 	/**
 	 * Retrieve the string containing the CAPTCHA inline javascript.
 	 *
+	 * Deprecation note:
+	 * The only reason we haven't removed this method at all is that it's protected.
+	 * There is a non-zero probability that people have their own classes that extend Frontend class.
+	 *
 	 * @since 1.6.4
+	 * @deprecated 1.8.2
 	 *
 	 * @param array $captcha_settings The CAPTCHA settings.
 	 *
@@ -1667,152 +1672,9 @@ class Frontend {
 	 */
 	protected function get_captcha_inline_script( $captcha_settings ) {
 
-		// IE11 polyfills for native `matches()` and `closest()` methods.
-		$polyfills = /** @lang JavaScript */
-			'if (!Element.prototype.matches) {
-				Element.prototype.matches = Element.prototype.msMatchesSelector || Element.prototype.webkitMatchesSelector;
-			}
-			if (!Element.prototype.closest) {
-				Element.prototype.closest = function (s) {
-					var el = this;
-					do {
-						if (Element.prototype.matches.call(el, s)) { return el; }
-						el = el.parentElement || el.parentNode;
-					} while (el !== null && el.nodeType === 1);
-					return null;
-				};
-			}
-		';
+		_deprecated_function( __METHOD__, '1.8.2 of the WPForms plugin', '\WPForms\Frontend\Captcha::get_captcha_inline_script' );
 
-		// Native equivalent for jQuery's `trigger()` method.
-		$dispatch = /** @lang JavaScript */
-			'var wpformsDispatchEvent = function (el, ev, custom) {
-				var e = document.createEvent(custom ? "CustomEvent" : "HTMLEvents");
-				custom ? e.initCustomEvent(ev, true, true, false) : e.initEvent(ev, true, true);
-				el.dispatchEvent(e);
-			};
-		';
-
-		// Update container class after changing Turnstile type.
-		$turnstile_update_class = /** @lang JavaScript */
-			'var turnstileUpdateContainer = function (el) {
-				let form = el.closest( "form" ),
-				iframeHeight = el.getElementsByTagName("iframe")[0].style.height;
-				
-				parseInt(iframeHeight) === 0 ? 
-					form.querySelector(".wpforms-is-turnstile").classList.add( "wpforms-is-turnstile-invisible" ) :
-					form.querySelector(".wpforms-is-turnstile").classList.remove( "wpforms-is-turnstile-invisible" );
-			};
-		';
-
-		// Captcha callback, used by hCaptcha and checkbox reCaptcha v2.
-		$callback = /** @lang JavaScript */
-			'var wpformsRecaptchaCallback = function (el) {
-				var hdn = el.parentNode.querySelector(".wpforms-recaptcha-hidden");
-				var err = el.parentNode.querySelector("#g-recaptcha-hidden-error");
-				hdn.value = "1";
-				wpformsDispatchEvent(hdn, "change", false);
-				hdn.classList.remove("wpforms-error");
-				err && hdn.parentNode.removeChild(err);
-			};
-		';
-
-		if ( $captcha_settings['provider'] === 'hcaptcha' ) {
-
-			$data  = $dispatch;
-			$data .= $callback;
-
-			$data .= /** @lang JavaScript */
-				'var wpformsRecaptchaLoad = function () {
-					Array.prototype.forEach.call(document.querySelectorAll(".g-recaptcha"), function (el) {
-						var captchaID = hcaptcha.render(el, {
-							callback: function () {
-								wpformsRecaptchaCallback(el);
-							}
-						});
-						el.setAttribute("data-recaptcha-id", captchaID);
-					});
-					wpformsDispatchEvent(document, "wpformsRecaptchaLoaded", true);
-				};
-			';
-
-			return $data;
-		}
-
-		if ( $captcha_settings['recaptcha_type'] === 'v3' ) {
-
-			$data = $dispatch;
-
-			$data .= /** @lang JavaScript */
-				'var wpformsRecaptchaV3Execute = function ( callback ) {
-					grecaptcha.execute( "' . $captcha_settings['site_key'] . '", { action: "wpforms" } ).then( function ( token ) {
-						Array.prototype.forEach.call( document.getElementsByName( "wpforms[recaptcha]" ), function ( el ) {
-							el.value = token;
-						} );
-						if ( typeof callback === "function" ) {
-							return callback();
-						}
-					} );
-				}
-				grecaptcha.ready( function () {
-					wpformsDispatchEvent( document, "wpformsRecaptchaLoaded", true );
-				} );
-			';
-
-		} elseif ( $captcha_settings['recaptcha_type'] === 'invisible' ) {
-
-			$data  = $polyfills;
-			$data .= $dispatch;
-
-			$data .= /** @lang JavaScript */
-				'var wpformsRecaptchaLoad = function () {
-					Array.prototype.forEach.call(document.querySelectorAll(".g-recaptcha"), function (el) {
-						try {
-							var recaptchaID = grecaptcha.render(el, {
-								callback: function () {
-									wpformsRecaptchaCallback(el);
-								}
-							}, true);
-							el.closest("form").querySelector("button[type=submit]").recaptchaID = recaptchaID;
-						} catch (error) {}
-					});
-					wpformsDispatchEvent(document, "wpformsRecaptchaLoaded", true);
-				};
-				var wpformsRecaptchaCallback = function (el) {
-					var $form = el.closest("form");
-					if (typeof wpforms.formSubmit === "function") {
-						wpforms.formSubmit($form);
-					} else {
-						$form.querySelector("button[type=submit]").recaptchaID = false;
-						$form.submit();
-					}
-				};
-			';
-
-		} else {
-
-			$data  = $dispatch;
-			$data .= $callback;
-
-			$data .= /** @lang JavaScript */
-				'var wpformsRecaptchaLoad = function () {
-					Array.prototype.forEach.call(document.querySelectorAll(".g-recaptcha"), function (el) {
-						try {
-							var recaptchaID = grecaptcha.render(el, {
-								callback: function () {
-									wpformsRecaptchaCallback(el);
-								}
-							});
-							el.setAttribute("data-recaptcha-id", recaptchaID);
-						} catch (error) {}
-					});
-					wpformsDispatchEvent(document, "wpformsRecaptchaLoaded", true);
-				};
-			';
-
-		}
-
-		return $data;
+		return '';
 	}
 
 	/**
@@ -1868,7 +1730,7 @@ class Frontend {
 		if ( ! $this->amp_obj->is_amp() ) {
 			wp_enqueue_script(
 				'wpforms-confirmation',
-				WPFORMS_PLUGIN_URL . "assets/js/wpforms-confirmation{$min}.js",
+				WPFORMS_PLUGIN_URL . "assets/js/frontend/wpforms-confirmation{$min}.js",
 				[ 'jquery' ],
 				WPFORMS_VERSION,
 				true
@@ -1934,6 +1796,7 @@ class Frontend {
 			'val_email_restricted'       => wpforms_setting( 'validation-email-restricted', esc_html__( 'This email address is not allowed.', 'wpforms-lite' ) ),
 			'val_number'                 => wpforms_setting( 'validation-number', esc_html__( 'Please enter a valid number.', 'wpforms-lite' ) ),
 			'val_number_positive'        => wpforms_setting( 'validation-number-positive', esc_html__( 'Please enter a valid positive number.', 'wpforms-lite' ) ),
+			'val_minimum_price'          => wpforms_setting( 'validation-minimum-price', esc_html__( 'Amount entered is less than the required minimum.', 'wpforms-lite' ) ),
 			'val_confirm'                => wpforms_setting( 'validation-confirm', esc_html__( 'Field values do not match.', 'wpforms-lite' ) ),
 			'val_checklimit'             => wpforms_setting( 'validation-check-limit', esc_html__( 'You have exceeded the number of allowed selections: {#}.', 'wpforms-lite' ) ),
 			'val_limit_characters'       => wpforms_setting(
@@ -2037,6 +1900,9 @@ class Frontend {
 			$strings['currency_symbol']     = isset( $currencies[ $currency ]['symbol'] ) ? $currencies[ $currency ]['symbol'] : '$';
 			$strings['currency_symbol_pos'] = isset( $currencies[ $currency ]['symbol_pos'] ) ? $currencies[ $currency ]['symbol_pos'] : 'left';
 		}
+
+		$strings['val_requiredpayment'] = wpforms_setting( 'validation-requiredpayment', esc_html__( 'Payment is required.', 'wpforms-lite' ) );
+		$strings['val_creditcard']      = wpforms_setting( 'validation-creditcard', esc_html__( 'Please enter a valid credit card number.', 'wpforms-lite' ) );
 
 		return $strings;
 	}
@@ -2197,12 +2063,12 @@ class Frontend {
 							if ( form.querySelector( '.wpforms-error-container' ) ) {
 								return;
 							}
-							
+
 							const formError = error.cloneNode( true ),
 								formErrorId = form.id + '-error';
-							
+
 							formError.setAttribute( 'id', formErrorId );
-							
+
 							form.insertBefore( formError, form.firstChild );
 							form.setAttribute( 'aria-invalid', 'true' );
 							form.setAttribute( 'aria-errormessage', formErrorId );

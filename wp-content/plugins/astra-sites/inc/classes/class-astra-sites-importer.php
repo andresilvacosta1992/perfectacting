@@ -57,6 +57,7 @@ if ( ! class_exists( 'Astra_Sites_Importer' ) ) {
 			add_action( 'wp_ajax_astra-sites-import-wpforms', array( $this, 'import_wpforms' ) );
 			add_action( 'wp_ajax_astra-sites-import-cartflows', array( $this, 'import_cartflows' ) );
 			add_action( 'wp_ajax_astra-sites-import-spectra-settings', array( $this, 'import_spectra_settings' ) );
+			add_action( 'wp_ajax_astra-sites-import-surecart-settings', array( $this, 'import_surecart_settings' ) );
 			add_action( 'wp_ajax_astra-sites-import-customizer-settings', array( $this, 'import_customizer_settings' ) );
 			add_action( 'wp_ajax_astra-sites-import-prepare-xml', array( $this, 'prepare_xml_data' ) );
 			add_action( 'wp_ajax_astra-sites-import-options', array( $this, 'import_options' ) );
@@ -216,12 +217,15 @@ if ( ! class_exists( 'Astra_Sites_Importer' ) ) {
 				}
 			}
 
-			$wpforms_url = ( isset( $_REQUEST['wpforms_url'] ) ) ? sanitize_url( urldecode( $_REQUEST['wpforms_url'] ) ) : sanitize_url( $wpforms_url ); // phpcs:ignore -- We need to remove this ignore once the WPCS has released this issue fix - https://github.com/WordPress/WordPress-Coding-Standards/issues/2189.
+			$screen = ( isset( $_REQUEST['screen'] ) ) ? sanitize_text_field( $_REQUEST['screen'] ) : '';
+			$id = ( isset( $_REQUEST['id'] ) ) ? absint( $_REQUEST['id'] ) : '';
+
+			$wpforms_url = ( 'elementor' === $screen ) ? astra_sites_get_wp_forms_url( $id ) : astra_get_site_data( 'astra-site-wpforms-path' );
 			$ids_mapping = array();
 
 			if ( ! astra_sites_is_valid_url( $wpforms_url ) ) {
 				/* Translators: %s is WP Forms URL. */
-				wp_send_json_error( sprintf( __( 'Invalid Request URL - %s', 'astra-sites' ), $wpforms_url ) );
+				wp_send_json_error( sprintf( __( 'Invalid WPform Request URL - %s', 'astra-sites' ), $wpforms_url ) );
 			}
 
 			if ( ! empty( $wpforms_url ) && function_exists( 'wpforms_encode' ) ) {
@@ -312,6 +316,7 @@ if ( ! class_exists( 'Astra_Sites_Importer' ) ) {
 			if ( ! current_user_can( 'edit_posts' ) ) {
 				wp_send_json_error();
 			}
+
 			// Disable CartFlows import logging.
 			add_filter( 'cartflows_enable_log', '__return_false' );
 
@@ -321,7 +326,7 @@ if ( ! class_exists( 'Astra_Sites_Importer' ) ) {
 			add_action( 'cartflows_step_imported', array( $this, 'track_flows' ) );
 			add_filter( 'cartflows_enable_imported_content_processing', '__return_false' );
 
-			$url = ( isset( $_REQUEST['cartflows_url'] ) ) ? sanitize_url( urldecode( $_REQUEST['cartflows_url'] ) ) : sanitize_url( urldecode( $url ) ); // phpcs:ignore -- We need to remove this ignore once the WPCS has released this issue fix - https://github.com/WordPress/WordPress-Coding-Standards/issues/2189.
+			$url = astra_get_site_data( 'astra-site-cartflows-path' );
 			if ( ! empty( $url ) && is_callable( 'CartFlows_Importer::get_instance' ) ) {
 
 				// Download JSON file.
@@ -347,6 +352,8 @@ if ( ! class_exists( 'Astra_Sites_Importer' ) ) {
 				} else {
 					wp_send_json_error( __( 'There was an error downloading the CartFlows flows file.', 'astra-sites' ) );
 				}
+			} else {
+				wp_send_json_error( __( 'Empty file for CartFlows flows', 'astra-sites' ) );
 			}
 
 			if ( defined( 'WP_CLI' ) ) {
@@ -370,10 +377,10 @@ if ( ! class_exists( 'Astra_Sites_Importer' ) ) {
 			if ( ! current_user_can( 'edit_posts' ) ) {
 				wp_send_json_error();
 			}
-			$url = ( isset( $_REQUEST['spectra_settings'] ) ) ? sanitize_url( urldecode( $_REQUEST['spectra_settings'] ) ) : sanitize_url( urldecode( $url ) ); // phpcs:ignore -- We need to remove this ignore once the WPCS has released this issue fix - https://github.com/WordPress/WordPress-Coding-Standards/issues/2189.
+			$url = astra_get_site_data( 'astra-site-spectra-settings' );
 			if ( ! astra_sites_is_valid_url( $url ) ) {
 				/* Translators: %s is XML URL. */
-				wp_send_json_error( sprintf( __( 'Invalid Request URL - %s', 'astra-sites' ), $url ) );
+				wp_send_json_error( sprintf( __( 'Invalid XML Request URL - %s', 'astra-sites' ), $url ) );
 			}
 
 			if ( ! empty( $url ) && is_callable( 'UAGB_Admin_Helper::get_instance' ) ) {
@@ -404,10 +411,43 @@ if ( ! class_exists( 'Astra_Sites_Importer' ) ) {
 			}
 
 			if ( defined( 'WP_CLI' ) ) {
-				WP_CLI::line( 'Imported from ' . $url );
+				WP_CLI::line( 'Imported Spectra settings from ' . $url );
 			} elseif ( wp_doing_ajax() ) {
 				wp_send_json_success( $url );
 			}
+		}
+		/**
+		 * Import Surecart Settings
+		 *
+		 * @since 3.3.0
+		 * @return void
+		 */
+		public function import_surecart_settings() {
+			check_ajax_referer( 'astra-sites', '_ajax_nonce' );
+			if ( ! current_user_can( 'manage_options' ) ) {
+				wp_send_json_error( __( 'You are not allowed to perform this action', 'astra-sites' ) );
+			}
+			$id = isset( $_POST['source_id'] ) ? base64_decode( sanitize_text_field( $_POST['source_id'] ) ) : '';
+			if ( is_callable( 'SureCart\Models\ProvisionalAccount::create' ) && '' !== $id ) {
+				$currency = isset( $_POST['source_currency'] ) ? sanitize_text_field( $_POST['source_currency'] ) : 'usd';
+				$token = \SureCart\Models\ApiToken::get();
+				if ( ! empty( $token ) ) {
+					\SureCart\Models\ApiToken::clear();
+				}
+				$result = SureCart\Models\ProvisionalAccount::create(
+					array(
+						'account_currency'  => $currency, // It will default to USD.
+						'account_name'      => '', // if you do not pass this it will default to the site name.
+						'account_url'       => '', // if you do not pass this it will default to the site url.
+						'email'             => '', // optional.
+						'source_account_id' => $id,
+					)
+				);
+				if ( ! is_wp_error( $result ) ) {
+					wp_send_json_success( 'success' );
+				}           
+			}
+			wp_send_json_error( __( 'There was an error cloning the surecart store.', 'astra-sites' ) );
 		}
 
 		/**
@@ -477,11 +517,11 @@ if ( ! class_exists( 'Astra_Sites_Importer' ) ) {
 				wp_send_json_error( __( 'The XMLReader library is not available. This library is required to import the content for the website.', 'astra-sites' ) );
 			}
 
-			$wxr_url = ( isset( $_REQUEST['wxr_url'] ) ) ? sanitize_url( urldecode( $_REQUEST['wxr_url'] ) ) : ''; // phpcs:ignore -- We need to remove this ignore once the WPCS has released this issue fix - https://github.com/WordPress/WordPress-Coding-Standards/issues/2189.
+			$wxr_url = astra_get_site_data( 'astra-site-wxr-path' );
 
 			if ( ! astra_sites_is_valid_url( $wxr_url ) ) {
-				/* Translators: %s is XML URL. */
-				wp_send_json_error( sprintf( __( 'Invalid Request URL - %s', 'astra-sites' ), $wxr_url ) );
+				/* Translators: %s is WXR URL. */
+				wp_send_json_error( sprintf( __( 'Invalid WXR Request URL - %s', 'astra-sites' ), $wxr_url ) );
 			}
 
 			Astra_Sites_Importer_Log::add( 'Importing from XML ' . $wxr_url );
@@ -593,8 +633,16 @@ if ( ! class_exists( 'Astra_Sites_Importer' ) ) {
 			}
 
 			$data = astra_get_site_data( 'astra-site-widgets-data' );
-
-			$widgets_data = ( isset( $data ) ) ? (object) json_decode( $data ) : (object) $widgets_data;
+			if ( isset( $data ) && is_object( $data ) ) {
+				// $data is set and is an object.
+				$widgets_data = $data;
+			} elseif ( isset( $data ) && is_string( $data ) ) {
+				// $data is set but is not an object.
+				$widgets_data = (object) json_decode( $data );
+			} else {
+				// $data is not set.
+				$widgets_data = (object) $widgets_data;
+			}
 
 			if ( ! empty( $widgets_data ) ) {
 
@@ -637,10 +685,13 @@ if ( ! class_exists( 'Astra_Sites_Importer' ) ) {
 			}
 
 			$demo_data = get_option( 'astra_sites_import_data', array() );
-
+			// Set permalink structure to use post name.
+			update_option( 'permalink_structure', '/%postname%/' );
+			
 			do_action( 'astra_sites_import_complete', $demo_data );
 
 			update_option( 'astra_sites_import_complete', 'yes', 'no' );
+			update_option( 'astra_sites_batch_process_complete', 'no' );
 			delete_transient( 'astra_sites_import_started' );
 
 			if ( wp_doing_ajax() ) {
@@ -776,6 +827,8 @@ if ( ! class_exists( 'Astra_Sites_Importer' ) ) {
 				Astra_Sites_Importer_Log::add( 'Cache for Astra Addon cleared.' );
 			}
 
+			Astra_Sites_Utils::third_party_cache_plugins_clear_cache();
+
 			$this->update_latest_checksums();
 
 			// Flush permalinks.
@@ -792,7 +845,7 @@ if ( ! class_exists( 'Astra_Sites_Importer' ) ) {
 		 */
 		public function update_latest_checksums() {
 			$latest_checksums = get_site_option( 'astra-sites-last-export-checksums-latest', '' );
-			update_site_option( 'astra-sites-last-export-checksums', $latest_checksums, 'no' );
+			update_site_option( 'astra-sites-last-export-checksums', $latest_checksums );
 		}
 
 		/**

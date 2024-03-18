@@ -3,9 +3,9 @@ Contributors: brainstormforce
 Donate link: https://wpastra.com/pro/
 Tags: Elementor,Beaver Builder,Templates,Gutenberg,Block Editor,Astra Starter Sites
 Requires at least: 4.4
-Requires PHP: 5.3
-Tested up to: 6.2
-Stable tag: 3.2.3
+Requires PHP: 7.4
+Tested up to: 6.4
+Stable tag: 4.0.13
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -18,6 +18,8 @@ The growing library of 300+ ready-to-use templates that work with all WordPress 
 Create professional designed pixel perfect websites in minutes with the Starter Templates plugin.
 
 This plugin gives you access to 280+ pre-made full website templates and individual pages for your favorite page builder such as Elementor, Beaver Builder and the Block Editor.
+
+[Try it out on a free dummy site](https://bsf.io/starter-templates-demo)
 
 All you need to do is select the demo that suits your needs, import, tweak and go live!
 
@@ -46,7 +48,7 @@ Businesses like restaurants, lawyers, agencies, interior designers, artist shops
 - [Beaver Builder Free Website Templates](https://wpastra.com/ready-websites/?page-builder=beaver-builder&category=free)
 - [Block Editor Free Website Templates](https://wpastra.com/ready-websites/?page-builder=gutenberg&category=free)
 
-You can extend this library with premium ready-to-use website demos by purchasing one of the Astra Bundles, i.e. either the Essential Bundle or the Growth Bundle.
+You can extend this library with premium ready-to-use website demos by purchasing one of the Essential or Business Toolkits.
 
 = WHY PEOPLE LOVE THE ASTRA THEME? =
 
@@ -133,6 +135,138 @@ We are open to suggestions and would love to work on topics that our users are l
 
 == Changelog ==
 
+v4.0.13 - 21-February-2024
+- Fix: Resolved an issue where the AI description won't get generated on WordPress.com sites.
+
+v4.0.12 - 12-February-2024
+- Fix: Resolved an issue where the Template Kit button was not visible due to mismatched business categories.
+
+v4.0.11 - 10-February-2024
+- Fix: Resolved an issue where the import process stayed stuck at 95% with AI Website Builder.
+
+v4.0.10 - 07-February-2024
+- Fix: Resolved an issue where the Template Kit button was not visible.
+
+v4.0.9 - 05-February-2024
+- Fix: Resolved an issue where the category was not assigned after import.
+
+v4.0.8 - 01-February-2024
+- Improvement: AI Website Builder - Ability to create a site with desired features like Donations, Automation, Sales Funnels Video Player, etc for the website.
+
+v4.0.7 - 29-January-2024
+- Fix: Resolved an issue where the Premium Template Kits won't get imported.
+
+v4.0.6 - 25-January-2024
+- Improvement: Enhanced user experience by providing informative error messages for better troubleshooting.
+
+v4.0.5 - 23-January-2024
+- Improvement: Added Flexbox Container compatibility for Elementor templates.
+
+v4.0.4 - 22-January-2024
+- Fix: Fixed the fatal error issue that would occur after Spectra v2.12.0.
+
+v4.0.3 - 17-January-2024
+- Fix: Fixed an issue where the import process was breaking for AI websites.
+- Fix: Fixed an issue where the images won't get reflected in search results as per the search keyword.
+
+v4.0.2 - 15-January-2024
+- Improvement: Added Flexbox Container compatibility in Elementor.
+- Improvement: Added ability to resume back to last session while building AI website.
+- Improvement: Better UX while using AI Website Builder.
+
+v4.0.1 - 04-January-2024
+- Fix: Fixed an issue where the CSS looked messed up after importing using AI Website Builder.
+
+v4.0.0 - 03-January-2024
+- New: AI Website Builder.
+- Fix: Tightened the plugin security.
+
+v3.5.7 - 30-December-2023
+- Fix: Fixed Template Kit library conflict ( 503 Error ) with Gravity Form plugin.
+
+v3.5.6 - 27-December-2023
+- New: Expanded the Template Kit Library by introducing site templates for an enriched selection of design options.
+- Improvement: Enhanced the WordPress Dashboard banner for improved visibility.
+- Improvement: Streamlined compatibility by discontinuing support for PHP versions below 7.4
+- Fix: Fixed the persistent customizer CSS issue in non-adaptive mode within the Template Kit Library.
+- Fix: Enhanced compatibility in Template Kits Library to ensure seamless template display even when Spectra is activated midway through the import process.
+
+v3.5.5 - 19-December-2023
+- Improvement: User Interface improvements for the Template Kit library.
+- Improvement: Downloading the selected images in the onboarding of the Template Kit library to media.
+- Improvement: The Disable AI option in the Template Kit library will be similar to the Manage AI feature option in Spectra.
+- Improvement: Updating Disable AI option value based on Non-Adaptive mode option in Template Kit library.
+- Fix: The non-Adaptive mode option of the Template Kit library was not getting enabled after reloading the page.
+
+v3.5.4 - 15-December-2023
+- Fix: Generate Content with the AI button was not showing in the Template Kit library if a user is already authorized to ZipAI.
+- Fix: Patterns & Pages preview from Template Kit was not compatible with RTL.
+- Fix: Fixed an issue where the translation was working on some screens.
+
+v3.5.3 - 13-December-2023
+- New: Introduced Non-adaptive mode option in Template Kit library.
+- Improvement: Added default line-height to heading tag in Template Kit library for a better preview of patterns and pages.
+
+v3.5.2 - 07-December-2023
+- New: All new AI based Template Kit library.
+
+v3.5.1 - 05-December-2023
+- Fix: Revert to Template Kit library v1.3.3
+
+v3.5.0 - 05-December-2023
+- New: All new AI based Template Kit library.
+- Improvement: Update the existing nomenclatures for the premium plans for Essential and Business Toolkits to Essential and Growth Bundles.
+- Fix: Fixed an issue where the WooCommerce description & short description are not displayed.
+- Fix: Removed the alert box that pops up when a user tries to leave the page after import process is done.
+
+v3.4.6 - 17-November-2023
+- Improvement: Added a filter to remove the page builder selection screen and automatically select the Block Editor.
+- Improvement: Ability to remove Elementor as a Page Builder from the selection list.
+- Fix: Prevented CartFlows plugin redirection when import is in progress.
+- Fix: Handled usage of deprecated  function get_page_by_title
+
+v3.4.5 - 02-November-2023
+- Improvement: Added extra checks for filesystem permission during template import.
+- Improvement: Display a notice if filesystem permissions are insufficient.
+- Fix: On the welcome screen, the "Getting Started" button link now respects sub-folder WordPress installations.
+- Fix: Corrected an issue where uploaded retina images were not displayed after importing.
+
+v3.4.4 - 02-October-2023
+- Fix: Fixed an issue where the Free Images feature was missing in the Premium Starter Templates plugin.
+
+v3.4.3 - 26-September-2023
+- Fix: Fixed a fatal error issue with widgets import in the process.
+
+v3.4.2 - 20-September-2023
+- Fix: Plugin causes redirect URL related warnings with WP CLI plugin activate command.
+
+v3.4.1 - 13-September-2023
+- Improvement: Improved the Starter Template Modal for users using Elementor in Dark Mode.
+- Fix: Addressed broken links and alignment issues in the welcome banner, especially on different resolutions.
+- Fix: Fixed the issue of displaying HTML Markup in the notice when a block is not found in Elementor.
+
+v3.4.0 - 11-August-2023
+- New: Added SureCart variation for every eCommerce based template.
+- Fix: Resolved an issue where the import progress percentage would overflow the limit.
+
+v3.3.0 - 02-August-2023
+- New: Added compatibility to FSE based Spectra One theme.
+- Improvement: Added Plugin Name in a few admin notices in order to make it better readable and understandable.
+- Improvement: Improved code to match the WordPress coding standards.
+- Improvement: Optimised the onboarding screens for streamlined experience.
+- Fix: Fixed an issue with the import process sequence to avoid overflow in the progress percent.
+
+v3.2.6 - 16-June-2023
+- Fix: An issue that occurred as a regression from v3.2.4, where CartFlows flows were not being imported.
+
+v3.2.5 - 15-June-2023
+- Improvement: Removed redundant functions to improve code efficiency.
+- Improvement: Improved the synchronisation process.
+- Fix: Resolved a console error issue while importing Elementor blocks that contain WPForms integration.
+
+v3.2.4 - 14-June-2023
+- Fix: Tightened the security of the plugin
+
 v3.2.3 - 22-May-2023
 - Improvement: Updated the Block Editor Template Library
 
@@ -197,7 +331,7 @@ v3.1.13 - 18-July-2022
 v3.1.12 - 12-July-2022
 - Improvement: Disable promotes Essential & Growth bundle when white label is enabled.
 - Fix: Templates are not displayed when we install plugin from Astra notice.
-- Fix: Display "Install Required Plugins" checkbox option if required plugins are not installed. 
+- Fix: Display "Install Required Plugins" checkbox option if required plugins are not installed.
 
 v3.1.11 - 03-June-2022
 - Improvement: Activate plugins using WP-CLI when importing demo using cli command.

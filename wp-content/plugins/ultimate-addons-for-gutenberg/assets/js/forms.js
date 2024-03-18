@@ -1,17 +1,17 @@
 UAGBForms = {
-	getElement : ( id ) => {
+	getElement: ( id ) => {
 		// Check if the script has run once already on the given element (required for homepage sidebar usage case).
-		const getJsELement = document.querySelector( `${id}:not(.uagb-activated-script)` );
-		if( ! getJsELement ) return null;
+		const getJsELement = document.querySelector( `${ id }:not(.uagb-activated-script)` );
+		if ( ! getJsELement ) return null;
 
 		// Ensures that the script only runs once on the given element (required for homepage sidebar usage case).
 		getJsELement.classList.add( 'uagb-activated-script' );
 		return getJsELement;
-	}, 
+	},
 
 	init( attr, id, post_id ) {
 		const scope = UAGBForms.getElement( id );
-		if( ! scope ){
+		if ( ! scope ) {
 			return;
 		}
 
@@ -97,11 +97,12 @@ UAGBForms = {
 
 			if ( reCaptchaSiteKeyV3 ) {
 				if ( attr.hidereCaptchaBatch ) {
-					if ( document.getElementsByClassName( 'grecaptcha-badge' )[ 0 ] === undefined ) {
-						return;
-					}
-					const badge = document.getElementsByClassName( 'grecaptcha-badge' )[ 0 ];
-					badge.style.visibility = 'hidden';
+					setTimeout( function(){
+						const badge = document.getElementsByClassName( 'grecaptcha-badge' )[0];
+						if( badge ){
+							badge.style.visibility = 'hidden';
+						}
+					}, 500 );
 				}
 				const api = document.createElement( 'script' );
 				api.type = 'text/javascript';
@@ -112,44 +113,52 @@ UAGBForms = {
 
 		//Ready Classes.
 		const formscope = document.getElementsByClassName( 'uagb-block-' + attr.block_id );
-		const formWrapper = formscope[ 0 ].children;
-		const sibling = formWrapper[ 0 ].children;
+		if ( formscope?.[ 0 ] ) {
+			const formWrapper = formscope[ 0 ].children;
+			const sibling = formWrapper[ 0 ].children;
 
-		for ( let index = 0; index < sibling.length; index++ ) {
-			if (
-				sibling[ index ].classList.contains( 'uag-col-2' ) &&
-				sibling[ index + 1 ].classList.contains( 'uag-col-2' )
-			) {
-				const div = document.createElement( 'div' );
-				div.className = 'uag-col-2-wrap uag-col-wrap-' + index;
-				sibling[ index + 1 ].after( div );
-				const wrapper_div = formscope[ 0 ].getElementsByClassName( 'uag-col-wrap-' + index );
-				wrapper_div[ 0 ].appendChild( sibling[ index ] );
-			}
+			for ( let index = 0; index < sibling.length; index++ ) {
+				if (
+					sibling[ index ].classList.contains( 'uag-col-2' ) &&
+					sibling[ index + 1 ].classList.contains( 'uag-col-2' )
+				) {
+					const div = document.createElement( 'div' );
+					div.className = 'uag-col-2-wrap uag-col-wrap-' + index;
+					sibling[ index + 1 ].after( div );
+					const wrapper_div = formscope[ 0 ].getElementsByClassName( 'uag-col-wrap-' + index );
+					wrapper_div[ 0 ].appendChild( sibling[ index ] );
+					wrapper_div[ 0 ].appendChild( sibling[ index ] );
+				}
 
-			if (
-				sibling[ index ].classList.contains( 'uag-col-3' ) &&
-				sibling[ index + 1 ].classList.contains( 'uag-col-3' ) &&
-				sibling[ index + 2 ].classList.contains( 'uag-col-3' )
-			) {
-				const div = document.createElement( 'div' );
-				div.className = 'uag-col-3-wrap uag-col-wrap-' + index;
-				sibling[ index + 2 ].after( div );
-				const wrapper_div = formscope[ 0 ].getElementsByClassName( 'uag-col-wrap-' + index );
-				wrapper_div[ 0 ].appendChild( sibling[ index ] );
-			}
+				if (
+					sibling[ index ].classList.contains( 'uag-col-3' ) &&
+					sibling[ index + 1 ].classList.contains( 'uag-col-3' ) &&
+					sibling[ index + 2 ].classList.contains( 'uag-col-3' )
+				) {
+					const div = document.createElement( 'div' );
+					div.className = 'uag-col-3-wrap uag-col-wrap-' + index;
+					sibling[ index + 2 ].after( div );
+					const wrapper_div = formscope[ 0 ].getElementsByClassName( 'uag-col-wrap-' + index );
+					wrapper_div[ 0 ].appendChild( sibling[ index ] );
+					wrapper_div[ 0 ].appendChild( sibling[ index ] );
+					wrapper_div[ 0 ].appendChild( sibling[ index ] );
+				}
 
-			if (
-				sibling[ index ].classList.contains( 'uag-col-4' ) &&
-				sibling[ index + 1 ].classList.contains( 'uag-col-4' ) &&
-				sibling[ index + 2 ].classList.contains( 'uag-col-4' ) &&
-				sibling[ index + 3 ].classList.contains( 'uag-col-4' )
-			) {
-				const div = document.createElement( 'div' );
-				div.className = 'uag-col-4-wrap uag-col-wrap-' + index;
-				sibling[ index + 3 ].after( div );
-				const wrapper_div = formscope[ 0 ].getElementsByClassName( 'uag-col-wrap-' + index );
-				wrapper_div[ 0 ].appendChild( sibling[ index ] );
+				if (
+					sibling[ index ].classList.contains( 'uag-col-4' ) &&
+					sibling[ index + 1 ].classList.contains( 'uag-col-4' ) &&
+					sibling[ index + 2 ].classList.contains( 'uag-col-4' ) &&
+					sibling[ index + 3 ].classList.contains( 'uag-col-4' )
+				) {
+					const div = document.createElement( 'div' );
+					div.className = 'uag-col-4-wrap uag-col-wrap-' + index;
+					sibling[ index + 3 ].after( div );
+					const wrapper_div = formscope[ 0 ].getElementsByClassName( 'uag-col-wrap-' + index );
+					wrapper_div[ 0 ].appendChild( sibling[ index ] );
+					wrapper_div[ 0 ].appendChild( sibling[ index ] );
+					wrapper_div[ 0 ].appendChild( sibling[ index ] );
+					wrapper_div[ 0 ].appendChild( sibling[ index ] );
+				}
 			}
 		}
 
@@ -202,8 +211,8 @@ UAGBForms = {
 			hideForm.style.display = 'none';
 
 			const errorMsg = document.querySelector( '.uagb-forms-failed-message-' + attr.block_id );
-			errorMsg.classList.remove( 'uagb-forms-submit-message-hide' );
-			errorMsg.classList.add( 'uagb-forms-failed-message' );
+			errorMsg?.classList?.remove( 'uagb-forms-submit-message-hide' );
+			errorMsg?.classList?.add( 'uagb-forms-failed-message' );
 			return false;
 		}
 

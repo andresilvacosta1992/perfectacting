@@ -101,10 +101,19 @@ function astra_sites_is_valid_url( $url = '' ) {
 		return false;
 	}
 
-	$valid_hosts = array(
-		'lh3.googleusercontent.com',
-		'pixabay.com',
+	$valid_hosts = apply_filters(
+		'astra_sites_valid_url', array(
+			'lh3.googleusercontent.com',
+			'pixabay.com',
+		)
 	);
+
+	$ai_site_url = get_option( 'ast_ai_import_current_url', '' );
+
+	if ( '' !== $ai_site_url ) {
+		$url = wp_parse_url( $ai_site_url );
+		$valid_hosts[] = $url ? $url['host'] : '';
+	}
 
 	$api_domain_parse_url = wp_parse_url( Astra_Sites::get_instance()->get_api_domain() );
 	$valid_hosts[] = $api_domain_parse_url['host'];
@@ -208,4 +217,31 @@ function astra_sites_empty_post_excerpt( $post_id = 0 ) {
 			'post_excerpt' => '',
 		)
 	);
+}
+
+/**
+ * Get the WP Forms URL.
+ * 
+ * @since 3.2.4
+ * @param int $id  The template ID.
+ * @return string
+ */
+function astra_sites_get_wp_forms_url( $id ) {
+	$demo_data = get_option( 'astra_sites_import_elementor_data_' . $id, array() );
+	if ( empty( $demo_data ) ) {
+		return '';
+	}
+
+	if ( isset( $demo_data['type'] ) ) {
+		$type = $demo_data['type'];
+		if ( 'site-pages' === $type && isset( $demo_data['astra-site-wpforms-path'] ) ) {
+			return $demo_data['astra-site-wpforms-path'];
+		}
+
+		if ( 'astra-blocks' === $type && isset( $demo_data['post-meta'] ) ) {
+			return $demo_data['post-meta']['astra-site-wpforms-path'];
+		}
+	}
+
+	return '';
 }

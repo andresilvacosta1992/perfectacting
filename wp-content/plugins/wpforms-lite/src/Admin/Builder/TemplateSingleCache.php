@@ -2,6 +2,7 @@
 
 namespace WPForms\Admin\Builder;
 
+use WPForms\Helpers\CacheBase;
 use WPForms\Tasks\Actions\AsyncRequestTask;
 
 /**
@@ -9,7 +10,7 @@ use WPForms\Tasks\Actions\AsyncRequestTask;
  *
  * @since 1.6.8
  */
-class TemplateSingleCache extends \WPForms\Helpers\CacheBase {
+class TemplateSingleCache extends CacheBase {
 
 	/**
 	 * Template Id (hash).
@@ -130,15 +131,15 @@ class TemplateSingleCache extends \WPForms\Helpers\CacheBase {
 	/**
 	 * Get cached data.
 	 *
-	 * @since 1.7.5
+	 * @since 1.8.2
 	 *
 	 * @return array Cached data.
 	 */
-	public function get_cached() {
+	public function get() {
 
-		$data = parent::get_cached();
+		$data = parent::get();
 
-		if ( parent::$updated === false ) {
+		if ( ! $this->updated ) {
 			$this->update_usage_tracking();
 		}
 
@@ -195,7 +196,7 @@ class TemplateSingleCache extends \WPForms\Helpers\CacheBase {
 	 *
 	 * @return array Prepared data for caching.
 	 */
-	protected function prepare_cache_data( $data ) {
+	protected function prepare_cache_data( $data ): array {
 
 		if (
 			empty( $data ) ||

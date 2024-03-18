@@ -3,7 +3,7 @@ let scrollOffset = 30;
 let scrolltoTop = false;
 let scrollElement = null;
 
-// eslint-disable-next-line no-undef
+
 UAGBTableOfContents = {
 	_getDocumentElement() {
 		let document_element = document;
@@ -16,21 +16,22 @@ UAGBTableOfContents = {
 		}
 		return document_element;
 	},
-	init( id ) {
+	init( id, attr ) {
 		const document_element = UAGBTableOfContents._getDocumentElement();
 		if ( document.querySelector( '.uagb-toc__list' ) !== null ) {
 			document.querySelector( '.uagb-toc__list' ).addEventListener(
 				'click',
-				UAGBTableOfContents._scroll // eslint-disable-line no-undef
+				UAGBTableOfContents._scroll
 			);
 		}
 		if ( document.querySelector( '.uagb-toc__scroll-top' ) !== null ) {
 			document.querySelector( '.uagb-toc__scroll-top' ).addEventListener(
 				'click',
-				UAGBTableOfContents._scrollTop // eslint-disable-line no-undef
+				UAGBTableOfContents._scrollTop
 			);
 		}
 
+		if( attr?.makeCollapsible ){
 		const elementToOpen = document_element.querySelector( id );
 
 		/* We need the following fail-safe click listener cause an usual click-listener
@@ -42,8 +43,8 @@ UAGBTableOfContents = {
 			const element = event.target;
 
 			// These two conditions help us target the required element (collapsible icon beside TOC heading).
-			const condition1 = element?.tagName === 'path' || element?.tagName === 'svg'; // Check if the clicked element type is either path or SVG.
-			const condition2 = element?.parentNode?.className === 'uagb-toc__title'; // Check if the clicked element's parent has the required class.
+			const condition1 = element?.tagName === 'path' || element?.tagName === 'svg' || element?.tagName === 'DIV'; // Check if the clicked element type is either path or SVG or Title DIV.
+			const condition2 = element?.className === 'uagb-toc__title' || element?.parentNode?.className === 'uagb-toc__title' || element?.parentNode?.tagName === 'svg'; // Check if the clicked element's parent has the required class.
 
 			if ( condition1 && condition2 ) {
 				const $root = element?.closest( `.wp-block-uagb-table-of-contents${id}` );
@@ -67,10 +68,11 @@ UAGBTableOfContents = {
 				}
 			}
 		}
+	}
 
 		document.addEventListener(
 			'scroll',
-			UAGBTableOfContents._showHideScroll // eslint-disable-line no-undef
+			UAGBTableOfContents._showHideScroll
 		);
 	},
 
@@ -147,7 +149,6 @@ UAGBTableOfContents = {
 		const offset = document.querySelector( hash ).offsetTop;
 
 		if ( null !== offset ) {
-			// eslint-disable-next-line no-undef
 			scroll( {
 				top: offset - scrollOffset,
 				behavior: 'smooth',
@@ -181,8 +182,20 @@ UAGBTableOfContents = {
 		e.preventDefault();
 
 		let hash = e.target.getAttribute( 'href' );
+
+		/*
+		* There may be instances where we don't receive the hash value from the href attribute.
+		* This can occur when the click event's target is not an anchor tag.
+		* However, the target element might be nested within an anchor tag.
+		* In these cases, we need to check if the parent element has an available hash value.
+		*/
+		if ( ! hash && e.target.tagName !== 'A' ) {
+			const getHash = e.target.closest( 'a' );
+			hash = getHash.getAttribute( 'href' );
+		}
+
 		if ( hash ) {
-			const node = document.querySelector( '.wp-block-uagb-table-of-contents' ); // eslint-disable-line no-undef
+			const node = document.querySelector( '.wp-block-uagb-table-of-contents' );
 
 			scrollData = node.getAttribute( 'data-scroll' );
 			scrollOffset = node.getAttribute( 'data-offset' );
@@ -195,19 +208,58 @@ UAGBTableOfContents = {
 			}
 			if ( scrollData ) {
 				if ( null !== offset ) {
-					// eslint-disable-next-line no-undef
 					scroll( {
 						top: offset - scrollOffset,
 						behavior: 'smooth',
 					} );
 				}
 			} else {
-				// eslint-disable-next-line no-undef
 				scroll( {
 					top: offset,
 					behavior: 'auto',
 				} );
 			}
+		}
+	},
+	selectDomElement( id ){
+		// Select id class but not with script init class.
+		const thisScope = document.querySelector( `${ id }:not(.script-init)` );
+		if ( ! thisScope ) {
+			return null;
+		}
+		// Add script init class to avoid reinit.
+		thisScope.classList.add( 'script-init' );
+		return thisScope;
+	},
+	parseTocSlug( slug ) {
+		// If not have the element then return false!
+		if ( ! slug ) {
+			return slug;
+		}
+
+		const parsedSlug = slug
+			.toString()
+			.toLowerCase()
+			.replace( /\…+/g, '' ) // Remove multiple …
+			.replace( /\u2013|\u2014/g, '' ) // Remove long dash
+			.replace( /&(amp;)/g, '' ) // Remove &
+			.replace( /[&]nbsp[;]/gi, '-' ) // Replace inseccable spaces
+			.replace( /[^a-zA-Z0-9\u00C0-\u017F _-]/g, '' ) // Keep only alphnumeric, space, -, _ and latin characters.
+			.replace( /&(mdash;)/g, '' ) // Remove long dash
+			.replace( /\s+/g, '-' ) // Replace spaces with -
+			.replace( /[&\/\\#,^!+()$~%.\[\]'":*?;-_<>{}@‘’”“|]/g, '' ) // Remove special chars
+			.replace( /\-\-+/g, '-' ) // Replace multiple - with single -
+			.replace( /^-+/, '' ) // Trim - from start of text
+			.replace( /-+$/, '' ); // Trim - from end of text
+
+		return decodeURI( encodeURIComponent( parsedSlug ) );
+	},
+	mapTocAnchorsForHref( anchors ) {
+		for ( const anchor of anchors ) {
+			// Update the href attribute with text content and text content should be parsed.
+			const href = anchor.textContent;
+			const parsedHref = UAGBTableOfContents.parseTocSlug( href );
+			anchor.setAttribute( 'href', `#${parsedHref}` );
 		}
 	},
 
@@ -218,33 +270,18 @@ UAGBTableOfContents = {
 	 * @param {string} id
 	 */
 	_run( attr, id ) {
-		const parseTocSlug = function ( slug ) {
-			// If not have the element then return false!
-			if ( ! slug ) {
-				return slug;
-			}
+		// Add setTime
+		setTimeout( function () {
+			UAGBTableOfContents._runWithTimeOut( attr, id );
+		}, 500 );
+	},
+	_runWithTimeOut( attr, id ) {
+		const $thisScope = UAGBTableOfContents.selectDomElement( id );
 
-			const parsedSlug = slug
-				.toString()
-				.toLowerCase()
-				.replace( /\…+/g, '' ) // Remove multiple …
-				.replace( /\u2013|\u2014/g, '' ) // Remove long dash
-				.replace( /&(amp;)/g, '' ) // Remove &
-				.replace( /[&]nbsp[;]/gi, '-' ) // Replace inseccable spaces
-				.replace( /[^a-z0-9 -_]/gi, '' ) // Keep only alphnumeric, space, -, _
-				.replace( /&(mdash;)/g, '' ) // Remove long dash
-				.replace( /\s+/g, '-' ) // Replace spaces with -
-				.replace( /[&\/\\#,^!+()$~%.\[\]'":*?;-_<>{}@‘’”“|]/g, '' ) // Remove special chars
-				.replace( /\-\-+/g, '-' ) // Replace multiple - with single -
-				.replace( /^-+/, '' ) // Trim - from start of text
-				.replace( /-+$/, '' ); // Trim - from end of text
-
-			return decodeURI( encodeURIComponent( parsedSlug ) );
-		};
-		const $thisScope = document.querySelector( id );
 		if ( ! $thisScope ) {
 			return;
 		}
+		
 		if ( $thisScope.querySelector( '.uag-toc__collapsible-wrap' ) !== null ) {
 			if ( $thisScope.querySelector( '.uag-toc__collapsible-wrap' ).length > 0 ) {
 				$thisScope.querySelector( '.uagb-toc__title-wrap' ).classList.add( 'uagb-toc__is-collapsible' );
@@ -266,13 +303,18 @@ UAGBTableOfContents = {
 			undefined !== allowedHTagStr && '' !== allowedHTagStr
 				? document.body.querySelectorAll( allowedHTagStr )
 				: document.body.querySelectorAll( 'h1, h2, h3, h4, h5, h6' );
-
 		if ( 0 !== allHeader.length ) {
 			const tocListWrap = $thisScope.querySelector( '.uagb-toc__list-wrap' );
 			if ( ! tocListWrap ) {
 				return;
 			}
 			const divsArr = Array.from( allHeader );
+
+			const aTags = tocListWrap.getElementsByTagName( 'a' );
+
+			// Map the anchors to their hrefs to ensure that the hrefs are is correct.
+			UAGBTableOfContents.mapTocAnchorsForHref( aTags );
+
 			/* Logic for Remove duplicate heading with same HTML tag and create an new array with duplicate entries start here. */
 			const ArrayOfDuplicateElements = function ( headingArray = [] ) {
 				const arrayWithDuplicateEntries = [];
@@ -287,12 +329,12 @@ UAGBTableOfContents = {
 				return arrayWithDuplicateEntries;
 			};
 			const duplicateHeadings = ArrayOfDuplicateElements( divsArr );
+
 			/* Logic for Remove duplicate heading with same HTML tag and create an new array with duplicate entries ends here. */
 			for ( let i = 0; i < divsArr.length; i++ ) {
-				let headerText = parseTocSlug( divsArr[ i ].innerText );
+				let headerText = UAGBTableOfContents.parseTocSlug( divsArr[ i ].innerText );
 				if ( '' !== divsArr[ i ].innerText ) {
 					if ( headerText.length < 1 ) {
-						const aTags = tocListWrap.getElementsByTagName( 'a' );
 						const searchText = divsArr[ i ].innerText;
 						for ( let j = 0; j < aTags.length; j++ ) {
 							if ( aTags[ j ].textContent === searchText ) {
@@ -313,8 +355,8 @@ UAGBTableOfContents = {
 					duplicateHeadings[ k ]
 						?.querySelector( '.uag-toc__heading-anchor' )
 						?.setAttribute( 'id', randomID.substring( 1 ) );
-					const aTags = Array.from( tocListWrap.getElementsByTagName( 'a' ) );
-					const duplicateHeadingsInTOC = ArrayOfDuplicateElements( aTags );
+					const anchorElements = Array.from( tocListWrap.getElementsByTagName( 'a' ) );
+					const duplicateHeadingsInTOC = ArrayOfDuplicateElements( anchorElements );
 					for ( let l = 0; l < duplicateHeadingsInTOC.length; l++ ) {
 						duplicateHeadingsInTOC[ k ]?.setAttribute( 'href', randomID );
 					}
@@ -340,8 +382,8 @@ UAGBTableOfContents = {
 		if ( scrollElement !== null ) {
 			scrollElement.classList.add( 'uagb-toc__show-scroll' );
 		}
-		UAGBTableOfContents._showHideScroll(); // eslint-disable-line no-undef
-		UAGBTableOfContents.hyperLinks(); // eslint-disable-line no-undef
-		UAGBTableOfContents.init( id ); // eslint-disable-line no-undef
+		UAGBTableOfContents._showHideScroll();
+		UAGBTableOfContents.hyperLinks();
+		UAGBTableOfContents.init( id, attr );
 	},
 };

@@ -6,6 +6,9 @@ namespace Simply_Static;
  * Class which upload files to SimplyCDN.
  */
 class Simply_Cdn_Task extends Task {
+
+	use canTransfer;
+
 	/**
 	 * The task name.
 	 *
@@ -40,11 +43,11 @@ class Simply_Cdn_Task extends Task {
 	public function __construct() {
 		parent::__construct();
 
-		$options = Options::instance();
-		$token   = get_option( 'sch_token' );
+		$options    = Options::instance();
+		$ss_options = get_option( 'simply-static' );
 
 		$this->cdn      = Simply_CDN_Handler::get_instance();
-		$this->data     = Simply_CDN_Api::get_data( $token );
+		$this->data     = Simply_CDN_Api::get_data( $ss_options['ssh_security_token'] );
 		$this->options  = $options;
 		$this->temp_dir = $options->get_archive_dir();
 	}
@@ -58,7 +61,7 @@ class Simply_Cdn_Task extends Task {
 		list( $pages_processed, $total_pages ) = $this->upload_static_files( $this->temp_dir );
 
 		if ( $pages_processed !== 0 ) {
-			$message = sprintf( __( "Uploaded %d of %d pages/files", 'simply-static' ), $pages_processed, $total_pages );
+			$message = sprintf( __( "Uploading %d of %d pages/files", 'simply-static' ), $pages_processed, $total_pages );
 			$this->save_status_message( $message );
 		}
 
@@ -67,6 +70,9 @@ class Simply_Cdn_Task extends Task {
 				$destination_url = trailingslashit( $this->options->get_destination_url() );
 				$message         = __( 'Destination URL:', 'simply-static' ) . ' <a href="' . $destination_url . '" target="_blank">' . $destination_url . '</a>';
 				$this->save_status_message( $message, 'destination_url' );
+			} else {
+				$message = sprintf( __( "Uploaded %d of %d pages/files", 'simply-static' ), $pages_processed, $total_pages );
+				$this->save_status_message( $message );
 			}
 		}
 
@@ -119,11 +125,12 @@ class Simply_Cdn_Task extends Task {
 		Util::debug_log( "Total pages: " . $total_pages . '; Pages remaining: ' . $pages_remaining );
 
 		while ( $static_page = array_shift( $static_pages ) ) {
-			$file_path = $this->temp_dir . $static_page->file_path;
+			$page_file_path = $this->get_page_file_path( $static_page );
+			$file_path = $this->temp_dir . $page_file_path;
 
 			if ( ! is_dir( $file_path ) && file_exists( $file_path ) ) {
-				$this->cdn->upload_file( $this->data->cdn->access_key, $this->data->cdn->pull_zone->name, $cdn_path . $static_page->file_path, $file_path );
-				Util::debug_log( "Uploaded: " . $file_path );
+				$this->cdn->upload_file( $this->data->cdn->access_key, $this->data->cdn->pull_zone->name, $cdn_path . $page_file_path, $file_path );
+				Util::debug_log( "Uploading: " . $file_path );
 			}
 
 			do_action( 'ss_file_transfered_to_cdn', $static_page, $destination_dir );
@@ -141,7 +148,8 @@ class Simply_Cdn_Task extends Task {
 	 * @return void
 	 */
 	public function add_404() {
-		$cdn_404_path = get_option( 'sch_404_path' );
+		$options      = get_option( 'simply-static' );
+		$cdn_404_path = str_replace( home_url(), '', get_permalink( $options['ssh_404_page_id'] ) );
 
 		if ( ! empty( $cdn_404_path ) && realpath( $this->temp_dir . untrailingslashit( $cdn_404_path ) . '/index.html' ) ) {
 			// Rename and copy file.

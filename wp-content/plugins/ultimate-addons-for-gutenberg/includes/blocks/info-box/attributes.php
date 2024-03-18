@@ -10,13 +10,13 @@
 $cta_border_attribute = UAGB_Block_Helper::uag_generate_border_attribute(
 	'btn'
 );
-
-$image_width_default = ( 'yes' === get_option( 'uagb-old-user-less-than-2' ) ) ? 120 : '';
+$inherit_from_theme   = 'enabled' === UAGB_Admin_Helper::get_admin_settings_option( 'uag_btn_inherit_from_theme', 'disabled' );
+$image_width_default  = ( 'yes' === get_option( 'uagb-old-user-less-than-2' ) ) ? 120 : '';
 
 return array_merge(
 	array(
 		'classMigrate'               => false,
-		'inheritFromTheme'           => false,
+		'inheritFromTheme'           => $inherit_from_theme,
 		'headingAlign'               => 'center',
 		'headingAlignTablet'         => '',
 		'headingAlignMobile'         => '',
@@ -25,6 +25,8 @@ return array_merge(
 		'prefixColor'                => '',
 		'prefixFontSize'             => '',
 		'prefixFontSizeType'         => 'px',
+		'prefixFontSizeTypeTablet'   => 'px',
+		'prefixFontSizeTypeMobile'   => 'px',
 		'prefixFontSizeTablet'       => '',
 		'prefixFontSizeMobile'       => '',
 		'prefixFontFamily'           => '',
@@ -37,6 +39,8 @@ return array_merge(
 		'prefixLoadGoogleFonts'      => false,
 		'headFontSize'               => '',
 		'headFontSizeType'           => 'px',
+		'headFontSizeTypeTablet'     => 'px',
+		'headFontSizeTypeMobile'     => 'px',
 		'headFontSizeTablet'         => '',
 		'headFontSizeMobile'         => '',
 		'headFontFamily'             => '',
@@ -49,6 +53,8 @@ return array_merge(
 		'headLoadGoogleFonts'        => false,
 		'subHeadFontSize'            => '',
 		'subHeadFontSizeType'        => 'px',
+		'subHeadFontSizeTypeTablet'  => 'px',
+		'subHeadFontSizeTypeMobile'  => 'px',
 		'subHeadFontSizeTablet'      => '',
 		'subHeadFontSizeMobile'      => '',
 		'subHeadFontFamily'          => '',
@@ -81,6 +87,7 @@ return array_merge(
 		'seperatorColor'             => '#333',
 		'seperatorThickness'         => '2',
 		'thicknessUnit'              => 'px',
+		'htmlTag'                    => 'div',
 		'ctaType'                    => 'none',
 		'ctaBgType'                  => 'color',
 		'ctaBgHoverType'             => 'color',
@@ -241,7 +248,7 @@ return array_merge(
 		'iconBackgroundColor'        => '#6EC1E3',
 		'iconBackgroundHoverColor'   => '',
 		'iconBorderWidth'            => 3,
-		// margin.
+		// Padding.
 		'blockTopPadding'            => '',
 		'blockRightPadding'          => '',
 		'blockLeftPadding'           => '',
@@ -258,11 +265,32 @@ return array_merge(
 		'blockPaddingUnitTablet'     => 'px',
 		'blockPaddingUnitMobile'     => 'px',
 		'blockPaddingLink'           => '',
+		// margin.
+		'blockTopMargin'             => '',
+		'blockRightMargin'           => '',
+		'blockLeftMargin'            => '',
+		'blockBottomMargin'          => '',
+		'blockTopMarginTablet'       => '',
+		'blockRightMarginTablet'     => '',
+		'blockLeftMarginTablet'      => '',
+		'blockBottomMarginTablet'    => '',
+		'blockTopMarginMobile'       => '',
+		'blockRightMarginMobile'     => '',
+		'blockLeftMarginMobile'      => '',
+		'blockBottomMarginMobile'    => '',
+		'blockMarginUnit'            => 'px',
+		'blockMarginUnitTablet'      => 'px',
+		'blockMarginUnitMobile'      => 'px',
+		'blockMarginLink'            => true,
 		'ctaBorderStyle'             => 'solid',
 		'ctaBorderColor'             => '',
 		'ctaBorderWidth'             => 1,
 		'ctaBorderRadius'            => 0,
 		'ctaBorderhoverColor'        => '',
+
+		// For Global Block Styles.
+		'globalBlockStyleName'       => '',
+		'globalBlockStyleId'         => '',
 	),
 	$cta_border_attribute
 );

@@ -41,10 +41,12 @@ return array_merge(
 		'hasOverlay'                  => true,
 		'isDismissable'               => true,
 		'haltBackgroundInteraction'   => true,
+		'willPushContent'             => true,
 		// ------------------------- CLOSE SETTINGS.
 		'closeIcon'                   => 'xmark',
 		'closeIconPosition'           => 'top-right',
 		'closeOverlayClick'           => true,
+		'closeEscapePress'            => true,
 		// ------------------------- POPUP STYLING ( BACKGROUND ).
 		'selectGradient'              => 'basic',
 		'gradientValue'               => 'linear-gradient(90deg, rgb(149, 201, 242) 0%, rgb(206, 168, 240) 100%)',
@@ -100,6 +102,7 @@ return array_merge(
 		'closeIconSizeTablet'         => '',
 		'closeIconSizeMobile'         => '',
 		'closeIconColor'              => '',
+		'closeIconColorHover'         => '',
 		// ------------------------- BOX SHADOW STYLING.
 		'useSeparateBoxShadows'       => false,
 		'boxShadowColor'              => '#00000070',

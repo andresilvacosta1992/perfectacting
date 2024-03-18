@@ -8,7 +8,8 @@ function xyz_ips_display_content($xyz_snippet_name){
     if(is_array($xyz_snippet_name)&& isset($xyz_snippet_name['snippet'])){
         $snippet_name = $xyz_snippet_name['snippet'];
         $query = $wpdb->get_results($wpdb->prepare( "SELECT * FROM ".$wpdb->prefix."xyz_ips_short_code WHERE title=%s" ,$snippet_name));
-        if(count($query)>0){
+        if(!empty($query))//if(count($query)>0)
+        {
             foreach ($query as $sippetdetails){
                 if($sippetdetails->status==1){
                   /*  if(is_numeric(ini_get('output_buffering'))){
@@ -68,9 +69,9 @@ $exception_msg="";
 
 if(get_option('xyz_ips_auto_exception')==1) {
 
-  $str1 = " try{";
+  $str1 = " \r\ntry{";
   $var="$";
-  $str2 = "}catch(Exception ".$var."e) {echo 'Caught exception: '.".$var."e->getMessage();".$var."exception_occur=1;".$var."exception_msg=".$var."e->getMessage();}";
+  $str2 = "\r\n}catch(Exception ".$var."e) {echo 'Caught exception: '.".$var."e->getMessage();".$var."exception_occur=1;".$var."exception_msg=".$var."e->getMessage();}";
 
   $first_start_tag=strpos($content_to_eval,"<?php");
   $last_end_tag=strrpos($content_to_eval,"?>");
@@ -85,7 +86,7 @@ if(get_option('xyz_ips_auto_exception')==1) {
   }
   else {
     if($last_end_tag>0) {
-      $new_pos=$last_end_tag+5; //add length of $str1
+      $new_pos=$last_end_tag+7; //add length of $str1
       $content_to_eval=substr_replace( $content_to_eval, $str2, $new_pos, 0 );
     }
     else if($last_end_tag==0) {

@@ -28,6 +28,7 @@ class Page_Handlers {
 	public function includes() {
 		$path = plugin_dir_path( dirname( __FILE__ ) ) . 'src/handlers/';
 		require_once $path . 'class-ss-page-handler.php';
+		require_once $path . 'class-ss-handler-404.php';
 	}
 
 	/**
@@ -68,5 +69,7 @@ class Page_Handlers {
 		$handler = $page->get_handler();
 
 		$handler->run_hooks();
+
+		do_action( 'simply_static_page_handler_request_after_hooks', $handler );
 	}
 }

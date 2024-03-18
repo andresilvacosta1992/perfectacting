@@ -41,6 +41,8 @@ if ( ! class_exists( 'UAGB_Update' ) ) :
 		 */
 		public function __construct() {
 			add_action( 'admin_init', array( $this, 'init' ) );
+			add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_styles' ) );
+			add_action( 'in_plugin_update_message-' . UAGB_BASE, array( $this, 'plugin_update_notification' ), 10 );
 		}
 
 		/**
@@ -54,7 +56,7 @@ if ( ! class_exists( 'UAGB_Update' ) ) :
 			$saved_version = get_option( 'uagb-version', false );
 
 			// Update auto saved version number.
-			if ( ! $saved_version ) {
+			if ( ! $saved_version || ! is_string( $saved_version ) ) {
 
 				// Fresh install updation.
 				$this->fresh_install_update_asset_generation_option();
@@ -74,6 +76,11 @@ if ( ! class_exists( 'UAGB_Update' ) ) :
 			// If user is older than 2.0.0 then set the option.
 			if ( version_compare( $saved_version, '2.0.0', '<' ) ) {
 				update_option( 'uagb-old-user-less-than-2', 'yes' );
+			}
+
+			// If user is older than equal to 2.12.1 then set the option.
+			if ( version_compare( $saved_version, '2.12.1', '<=' ) ) {
+				UAGB_Admin_Helper::update_admin_settings_option( 'uag_enable_quick_action_sidebar', 'disabled' );
 			}
 
 			// Enable Legacy Blocks for users older than 2.0.5.
@@ -116,6 +123,14 @@ if ( ! class_exists( 'UAGB_Update' ) ) :
 						'countdown'
 					);
 				}
+
+				// If user is older than 2.12.3 then enable the popup-builder Block that was added to the Core Blocks in this release.
+				if ( version_compare( $saved_version, '2.12.3', '<' ) ) {
+					array_push(
+						$core_blocks,
+						'popup-builder'
+					);
+				}
 			}
 
 			// If the core block array is not empty, update the enabled blocks option.
@@ -143,6 +158,31 @@ if ( ! class_exists( 'UAGB_Update' ) ) :
 			do_action( 'uagb_update_after' );
 		}
 
+
+		/**
+		 * Migrate_visibility_mode
+		 *
+		 * @since 2.8.0
+		 * @return void
+		 */
+		public static function migrate_visibility_mode() {
+
+			$old_option      = UAGB_Admin_Helper::get_admin_settings_option( 'uag_enable_coming_soon_mode' );
+			$old_option_page = UAGB_Admin_Helper::get_admin_settings_option( 'uag_coming_soon_page' );
+
+			if ( ! $old_option && ! $old_option_page ) {
+				return;
+			}
+
+			// Update the option.
+			UAGB_Admin_Helper::update_admin_settings_option( 'uag_visibility_mode', $old_option ? $old_option : 'disabled' );
+			UAGB_Admin_Helper::update_admin_settings_option( 'uag_visibility_page', $old_option_page ? $old_option_page : '' );
+
+			// Delete the old option.
+			UAGB_Admin_Helper::delete_admin_settings_option( 'uag_enable_coming_soon_mode' );
+			UAGB_Admin_Helper::delete_admin_settings_option( 'uag_coming_soon_page' );
+		}
+
 		/**
 		 * Update asset generation option if it is not exist.
 		 *
@@ -156,6 +196,54 @@ if ( ! class_exists( 'UAGB_Update' ) ) :
 			if ( UAGB_Helper::is_uag_dir_has_write_permissions() ) {
 				update_option( '_uagb_allow_file_generation', 'enabled' );
 			}
+		}
+
+		/**
+		 * Plugin update notification.
+		 *
+		 * @param array $data Plugin update data.
+		 * @since 2.7.2
+		 * @return void
+		 */
+		public function plugin_update_notification( $data ) {
+			if ( ! empty( $data['upgrade_notice'] ) ) { ?>
+				<hr class="uagb-plugin-update-notification__separator" />
+				<div class="uagb-plugin-update-notification">
+					<div class="uagb-plugin-update-notification__icon">
+						<span class="dashicons dashicons-info"></span>
+					</div>
+					<div>
+						<div class="uagb-plugin-update-notification__title">
+							<?php echo esc_html__( 'Heads up!', 'ultimate-addons-for-gutenberg' ); ?>
+						</div>
+						<div class="uagb-plugin-update-notification__message">
+							<?php
+								printf(
+									wp_kses(
+										$data['upgrade_notice'],
+										array( 'a' => array( 'href' => array() ) )
+									)
+								);
+							?>
+						</div>
+					</div>
+				</div>
+				<?php
+			} //end if
+		}
+
+		/**
+		 * Enqueue styles.
+		 *
+		 * @since 2.7.2
+		 * @return void
+		 */
+		public function enqueue_styles() {
+			$screen = get_current_screen();
+			if ( empty( $screen->id ) || 'plugins' !== $screen->id ) {
+				return;
+			}
+			wp_enqueue_style( 'uagb-update-notice', UAGB_URL . 'admin/assets/css/update-notice.css', array(), UAGB_VER );
 		}
 	}
 

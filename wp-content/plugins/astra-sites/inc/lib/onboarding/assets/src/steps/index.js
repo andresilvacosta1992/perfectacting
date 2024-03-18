@@ -144,7 +144,7 @@ const Steps = () => {
 			);
 		}
 
-		if ( currentIndex === 2 ) {
+		if ( currentIndex === 1 ) {
 			dispatch( {
 				type: 'set',
 				activePalette: {},
@@ -156,14 +156,6 @@ const Steps = () => {
 
 		setSettingIndex( false );
 	}, [ currentIndex, templateResponse, designStep ] );
-
-	const goToShowcase = () => {
-		dispatch( {
-			type: 'set',
-			currentIndex: currentIndex - 2,
-			currentCustomizeIndex: 0,
-		} );
-	};
 
 	window.onpopstate = () => {
 		const gridIndex = STEPS.findIndex(
@@ -199,7 +191,7 @@ const Steps = () => {
 
 	return (
 		<div className={ `st-step ${ current.class }` }>
-			{ currentIndex !== 3 && (
+			{ ! [ 1, 2, 5 ].includes( currentIndex ) && (
 				<div className="step-header">
 					{ current.header ? (
 						current.header
@@ -209,21 +201,6 @@ const Steps = () => {
 								<Logo />
 							</div>
 							<div className="right-col">
-								{ currentIndex === 4 && (
-									<div
-										className="back-to-main"
-										onClick={ goToShowcase }
-									>
-										<Tooltip
-											content={ __(
-												'Back to Templates',
-												'astra-sites'
-											) }
-										>
-											{ ICONS.cross }
-										</Tooltip>
-									</div>
-								) }
 								<div className="col exit-link">
 									<a href={ adminUrl }>
 										<Tooltip
@@ -232,7 +209,7 @@ const Steps = () => {
 												'astra-sites'
 											) }
 										>
-											{ ICONS.dashboard }
+											{ ICONS.remove }
 										</Tooltip>
 									</a>
 								</div>

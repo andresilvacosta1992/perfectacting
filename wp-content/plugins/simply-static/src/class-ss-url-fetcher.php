@@ -93,9 +93,9 @@ class Url_Fetcher {
 
 		Util::debug_log( "Fetching URL and saving it to: " . $temp_filename );
 
-        if ( $prepare_url ) {
-            $url = $static_page->get_handler()->prepare_url( $url );
-        }
+		if ( $prepare_url ) {
+			$url = $static_page->get_handler()->prepare_url( $url );
+		}
 
 		$response = self::remote_get( $url, $temp_filename );
 
@@ -119,7 +119,7 @@ class Url_Fetcher {
 			Util::debug_log( "http_status_code: " . $static_page->http_status_code . " | content_type: " . $static_page->content_type );
 
 			$relative_filename = null;
-			if ( $static_page->http_status_code == 200 ) {
+			if ( $this->can_create_directories_for_page( $static_page ) ) {
 				// pclzip doesn't like 0 byte files (fread error), so we're
 				// going to fix that by putting a single space into the file
 				if ( $filesize === 0 ) {
@@ -130,7 +130,7 @@ class Url_Fetcher {
 			}
 
 			if ( $relative_filename !== null ) {
-                $relative_filename      = apply_filters( 'simply_static_relative_filename', $relative_filename, $static_page );
+				$relative_filename      = apply_filters( 'simply_static_relative_filename', $relative_filename, $static_page );
 				$static_page->file_path = $relative_filename;
 				$file_path              = $this->archive_dir . $relative_filename;
 
@@ -155,6 +155,24 @@ class Url_Fetcher {
 	}
 
 	/**
+	 * @param Page $static_page
+	 *
+	 * @return boolean
+	 */
+	protected function can_create_directories_for_page( $static_page ) {
+		if ( $static_page->http_status_code == 200 ) {
+			return true;
+		}
+
+		$page_handler = $static_page->get_handler();
+		if ( $static_page->http_status_code === 404 && $page_handler && is_a( $page_handler, Handler_404::class ) ) {
+			return true;
+		}
+
+		return apply_filters( 'simply_static_can_create_directories_for_page', false, $static_page );
+	}
+
+	/**
 	 * Given a Static_Page, return a relative filename based on the URL
 	 *
 	 * This will also create directories as needed so that a file could be
@@ -169,9 +187,14 @@ class Url_Fetcher {
 		// a domain with no trailing slash has no path, so we're giving it one
 		$path = isset( $url_parts['path'] ) ? $url_parts['path'] : '/';
 
-		$origin_path_length = strlen( parse_url( Util::origin_url(), PHP_URL_PATH ) );
-		if ( $origin_path_length > 1 ) { // prevents removal of '/'
-			$path = substr( $path, $origin_path_length );
+		$origin_path = wp_parse_url( Util::origin_url(), PHP_URL_PATH );
+
+		if ( null !== $origin_path && '' !== $origin_path ) {
+			$origin_path_length = strlen( $origin_path );
+
+			if ( $origin_path_length > 1 ) { // prevents removal of '/'.
+				$path = substr( $path, $origin_path_length );
+			}
 		}
 
 		$path_info = Util::url_path_info( $path );
@@ -196,10 +219,10 @@ class Url_Fetcher {
 			}
 		}
 
-        $page_handler = $static_page->get_handler();
+		$page_handler = $static_page->get_handler();
 
-        $path_info = apply_filters( 'simply_static_page_path_info', $page_handler->get_path_info( $path_info ), $static_page );
-        $relative_file_dir = apply_filters( 'simple_static_page_relative_file_dir', $page_handler->get_relative_dir( $relative_file_dir ), $static_page );
+		$path_info         = apply_filters( 'simply_static_page_path_info', $page_handler->get_path_info( $path_info ), $static_page );
+		$relative_file_dir = apply_filters( 'simple_static_page_relative_file_dir', $page_handler->get_relative_dir( $relative_file_dir ), $static_page );
 
 		$create_dir = wp_mkdir_p( $this->archive_dir . urldecode( $relative_file_dir ) );
 		if ( $create_dir === false ) {
@@ -224,19 +247,19 @@ class Url_Fetcher {
 
 	public static function remote_get( $url, $filename = null ) {
 		$basic_auth_digest = Options::instance()->get( 'http_basic_auth_digest' );
-        Util::debug_log( "Fetching URL: " . $url );
-		$args = apply_filters(
-			'ss_remote_get_args',
-			array(
-				'timeout'     => self::TIMEOUT,
-				'sslverify'   => false,
-				'redirection' => 0, // disable redirection.
-				'blocking'    => true // do not execute code until this call is complete.
-			)
+
+		Util::debug_log( "Fetching URL: " . $url );
+
+		$args = array(
+			'timeout'             => self::TIMEOUT,
+			'sslverify'           => false,
+			'redirection'         => 0, // disable redirection.
+			'blocking'            => true,
+			'limit_response_size' => wp_max_upload_size(),
 		);
 
 		if ( $filename ) {
-			$args['stream']   = true; // stream body content to a file
+			$args['stream']   = true; // stream body content to a file.
 			$args['filename'] = $filename;
 		}
 
@@ -244,7 +267,7 @@ class Url_Fetcher {
 			$args['headers'] = array( 'Authorization' => 'Basic ' . $basic_auth_digest );
 		}
 
-		$response = wp_remote_get( $url, $args );
+		$response = wp_remote_get( $url, apply_filters( 'ss_remote_get_args', $args ) );
 
 		return $response;
 	}
