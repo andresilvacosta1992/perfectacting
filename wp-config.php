@@ -26,13 +26,13 @@
 
 // ** Database settings - You can get this info from your web host ** //
 /** The name of the database for WordPress */
-define( 'DB_NAME', '23_05_perfectacting' );
+define( 'DB_NAME', 'perfectacting_wp' );
 
 /** Database username */
 define( 'DB_USER', 'root' );
 
 /** Database password */
-define( 'DB_PASSWORD', '' );
+define( 'DB_PASSWORD', 'db32255289' );
 
 /** Database hostname */
 define( 'DB_HOST', 'localhost' );
