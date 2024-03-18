@@ -1,3 +1,5 @@
+#DESISTI, PREFERI USAR O BETTER SEARCH REPLACE PLUGIN WORDPRESS
+
 #!/bin/bash
 
 # Definir variáveis para o texto antigo, novo texto e nome do banco de dados
