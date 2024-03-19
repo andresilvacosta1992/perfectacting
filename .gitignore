@@ -1,2 +1,4 @@
 public_static
 wp-content/uploads/simply-static
+# Local Netlify folder
+.netlify
